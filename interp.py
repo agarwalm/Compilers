@@ -9,7 +9,7 @@ filePath = sys.argv[1]
 ast = compiler.parseFile(filePath)
 
 #
-#print ast
+print ast
 
 #make a dictionary of variables
 varD = {}
@@ -129,13 +129,13 @@ def interpret(n):
 		varD[n.node.name]=ops[n.op](interpret(n.node),interpret(n.expr))
 		return varD[n.node.name]
 
-	elif isinstance(n.Mod):
+	elif isinstance(n,Mod):
 		return interpret(n.left)%interpret(n.right)
 
-	elif isinstance(n.Power):
+	elif isinstance(n,Power):
 		return interpret(n.left)**interpret(n.right)
 
-	elif isinstance(n.FloorDiv):
+	elif isinstance(n,FloorDiv):
 		return interpret(n.left)//interpret(n.right)
 
 
