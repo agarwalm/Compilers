@@ -75,16 +75,40 @@ def interpret(n):
 		else:
 			raise Exception('Function not recognized')
 			return value
-#		else:
-#			raise Exception('Error: unrecognized AST node')
+
 
 	elif isinstance(n, Bitor):
+		for i in range(0, len(n.nodes)):
+			if not isinstance(interpret(n.nodes[i]), int):
+				raise Exception('Error! Bitor can only be of interger values')
+		
 		bitorVal = interpret(n.nodes[0])
 		for i in range(1, len(n.nodes)):
 			bitorVal =  bitorVal | interpret(n.nodes[i]) 
 		return bitorVal
-								
+	
+	elif isinstance(n, Bitand):
+		bitAndVal = interpret(n.nodes[0])
+		for i in range(1, len(n.nodes)):
+			bitAndVal = bitAndVal & interpret(n.nodes[i])
+		return bitAndVal
+	
+	elif isinstance(n, Bitxor):
+		for i in range(0, len(n.nodes)):
+			if not isinstance(interpret(n.nodes[i]), int):
+				raise Exception('Error! Bitxor can only be of integer values')
+		bitXorVal = interpret(n.nodes[0])
+		for i in range(1, len(n.nodes)) :
+			bitXorVal = bitXorVal ^ interpret(n.nodes[i])
+		return bitXorVal
+
 		
+		
+								
+								
+								
+	else:
+		raise Exception('Error: unrecognized AST node')	
 
 
 
