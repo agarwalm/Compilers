@@ -18,11 +18,11 @@ def interpret(n):
 	
 	if isinstance(n, Module):
 
-		return interpret(n.node)
+		interpret(n.node)
 	
 	elif isinstance(n, Stmt):
 		for node in n:
-			return interpret(node)
+			interpret(node)
 	
 	elif isinstance(n, Discard):
 		return interpret(n.expr)
@@ -152,7 +152,10 @@ def interpret(n):
 
 
 
-print interpret(ast)
-#print varD
+interpret(ast)
+#THIS IS JUST FOR DEBUGGING PURPOSES
+#TODO: delete it after we are done because the program should not print
+# anything unless print is called in the other file
+print varD
 		
 
