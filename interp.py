@@ -1,6 +1,7 @@
 import compiler
 from compiler.ast import *
 import sys
+import operator
 
 
 filePath = sys.argv[1]
@@ -61,7 +62,7 @@ def interpret(n):
 	
 	elif isinstance(n, Name):
 		if n.name not in varD:
-			print "ERROR"
+			print "no assignment to "+n.name
 			return
 		return varD[n.name]
 	
@@ -74,7 +75,7 @@ def interpret(n):
 			value = input("Enter an integer: ")
 		else:
 			raise Exception('Function not recognized')
-			return value
+		return value
 
 
 	elif isinstance(n, Bitor):
@@ -102,7 +103,40 @@ def interpret(n):
 			bitXorVal = bitXorVal ^ interpret(n.nodes[i])
 		return bitXorVal
 
-		
+	elif isinstance(n,LeftShift):
+		return interpret(n.left)<<interpret(n.right)
+
+	elif isinstance(n,RightShift):
+		return interpret(n.left)>>interpret(n.right)
+
+	elif isinstance(n,UnarySub):
+		return -interpret(n.expr)
+
+	elif isinstance(n,UnaryAdd):
+		return +interpret(n.expr)
+
+	elif isinstance(n,AugAssign):
+		ops = { "+=": operator.add, "-=": operator.sub 
+		,"*=": operator.mul, "/=": operator.div
+		, "<<=": operator.lshift,">>=": operator.rshift
+		,"|=": operator.or_, "&=": operator.and_
+		,"^=": operator.xor 
+		,"**=": operator.pow 
+		,"%=": operator.mod}
+		varD[n.node.name]=ops[n.op](interpret(n.node),interpret(n.expr))
+		return varD[n.node.name]
+
+	elif isinstance(n.Mod):
+		return interpret(n.left)%interpret(n.right)
+
+	elif isinstance(n.Power):
+		return interpret(n.left)**interpret(n.right)
+
+	elif isinstance(n.FloorDiv):
+		return interpret(n.left)//interpret(n.right)
+
+
+
 		
 								
 								
