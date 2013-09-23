@@ -58,7 +58,7 @@ def interpret(n):
 			raise Exception('ERROR! print can have only one constant integer argument.')
 		
 		else:
-			print interpret(n.nodes[0])
+			print value
 	
 	elif isinstance(n, Name):
 		if n.name not in varD:
