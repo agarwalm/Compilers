@@ -1,23 +1,24 @@
+#Homework 1 P0 Interpreter
+#Mrigya Agarwal, Christine Graff, Giuseppe Mendola
+
 import compiler
 from compiler.ast import *
 import sys
 import operator
 
-
+#the file to interpret is the first argument given 
 filePath = sys.argv[1]
 
+#abstract syntax tree for the contents of the file
 ast = compiler.parseFile(filePath)
-
-#
-print ast
 
 #make a dictionary of variables
 varD = {}
 
+#the function which interprets the module recursively
 def interpret(n):
 	
 	if isinstance(n, Module):
-
 		interpret(n.node)
 	
 	elif isinstance(n, Stmt):
@@ -34,7 +35,6 @@ def interpret(n):
 		val = interpret(n.expr)
 		varD[n.nodes[0].name] = val
 		return val
-	
 	
 	elif isinstance(n, Add):
 		return interpret(n.left) + interpret(n.right)
@@ -55,7 +55,6 @@ def interpret(n):
 	elif isinstance(n, Const):
 		if not isinstance(n.value, int):
 			raise Exception( 'ERROR! All constants must be integer values')
-			
 		else:
 			return n.value
 	
@@ -82,8 +81,6 @@ def interpret(n):
 			return value;
 		else:
 			raise Exception('ERROR! Function not recognized')
-
-
 
 	elif isinstance(n, Bitor):
 		bitorVal = interpret(n.nodes[0])
@@ -140,14 +137,8 @@ def interpret(n):
 		raise Exception('Error: unrecognized AST node')	
 
 
-
-
-
-
+#run the interpret function on the abstract syntax tree
 interpret(ast)
-#THIS IS JUST FOR DEBUGGING PURPOSES
-#TODO: delete it after we are done because the program should not print
-# anything unless print is called in the other file
-print varD
+
 		
 
