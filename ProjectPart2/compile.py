@@ -15,7 +15,7 @@ filePath = sys.argv[1]
 
 #abstract syntax tree for the contents of the file
 ast = compiler.parseFile(filePath)
-
+print ast
 #dict to keep track of the mapping of variable names to stack slots
 varToStack = {}
 
@@ -34,16 +34,14 @@ def flatten(n):
 	elif isinstance(n, Stmt):
 		print n.nodes
 		for x in n.nodes:
-			print x
 			print flattenStmt(x)
 			return flattenStmt(x)
 
 def flattenStmt(n):
 	if isinstance(n, Assign):
-		return flattenExp(n.exp, n.node)
+		return flattenExp(n.expr, n.nodes)
 
 	elif isinstance(n, Discard):
-		print "here"
 		return flattenExp(n.expr, genSym() )
 
 
@@ -52,10 +50,19 @@ def flattenExp(n, x):
 	if isinstance(n, Add):
 		a = genSym()
 		b = genSym()
-		return [ flattenExp(n.left, a), flattenExp(n.right, b), Assign(x, Add(a,b))]
+		print "hi"
+		l=flattenExp(n.left, a)
+		r=flattenExp(n.right, b)
+		return [ r, l, Assign(x, Add(a,b))]
 
 	elif isinstance(n, Const):
 		return [Assign(AssName(x, None), n)]
+
+	elif isinstance(n,Assign):
+		print "ass"
+		return 0
+
+
 
 
 
