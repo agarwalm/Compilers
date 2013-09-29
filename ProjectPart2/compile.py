@@ -34,10 +34,13 @@ def flatten(n):
 		return Module(None, flatten(n.node))
 
 	elif isinstance(n, Stmt):
+		stmt=[]
 		for x in n.nodes:
 			y=flattenStmt(x)
-			print y
-			return y
+			stmt.append(y)
+		print '\n'
+		print stmt
+		return stmt
 
 def flattenStmt(n):
 	if isinstance(n, Assign):
@@ -49,26 +52,62 @@ def flattenStmt(n):
 
 
 def flattenExp(n, x):
+	#Add instance
+	a='%N'
+	b='%N'
 	if isinstance(n, Add):
+		op=Add(a,b)
+		return binOp(n,x,op)
+	if isinstance(n,Sub):
+		op=Sub(a,b)
+		return binOp(n,x,op)
+	if isinstance(n,Mul):
+		op=Mul(a,b)
+		return binOp(n,x,op)
+	if isinstance(n,Div):
+		op=Div(a,b)
+		return binOp(n,x,op)
 
-		a= genSym()
-		b = genSym()
-		l=flattenExp(n.left, a)
-		r=flattenExp(n.right, b)
-		add=Add(a,b)
-		add.left=Name(a)
-		add.right=Name(b)
 
-		return [ r, l, Assign(x,add)]
+
+
 
 	elif isinstance(n, Const):
 
 		return [Assign(AssName(x, 'OP_ASSIGN'),n)]
 
+	elif isinstance(n,Name):
+		print "hello"
+		return Name(n.name)
 
 
 
 
+def binOp(n,x,op):
+	if ((isinstance(n.left,Const))and (isinstance(n.right,Const))):
+		a=genSym()
+		b=genSym()
+		l=flattenExp(n.left, a)
+		r=flattenExp(n.right, b)
+		op.left=Name(a)
+		op.right=Name(b)
+		return [l,r,Assign(x,op)]
+	elif(isinstance(n.left,Name)):
+		a=genSym()
+		r=flattenExp(n.right, a)
+		op.left=n.left
+		op.right=Name(a)
+		return [r, Assign(x,op)]
+	elif(isinstance(n.right,Name)):
+		a=genSym()
+		l=flattenExp(n.left, a)
+		op.left=Name(a)
+		op.right=n.right
+		return [ l,Assign(x,op)]
+	else:
+		op.left=n.left
+		op.right=n.right
+		return [Assign(x,op)]
 
 
 
