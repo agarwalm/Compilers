@@ -16,12 +16,14 @@ filePath = sys.argv[1]
 #abstract syntax tree for the contents of the file
 ast = compiler.parseFile(filePath)
 print ast
+#print ast
 #dict to keep track of the mapping of variable names to stack slots
 varToStack = {}
 
 #keeps track of the current variable in use so they can be incremented
 #by genSym()
 varName = 0
+vaD={}
 
 
 #takes a non flattened ast and returns a flattened ast
@@ -32,14 +34,14 @@ def flatten(n):
 		return Module(None, flatten(n.node))
 
 	elif isinstance(n, Stmt):
-		print n.nodes
 		for x in n.nodes:
-			print flattenStmt(x)
-			return flattenStmt(x)
+			y=flattenStmt(x)
+			print y
+			return y
 
 def flattenStmt(n):
 	if isinstance(n, Assign):
-		return flattenExp(n.expr, n.nodes)
+		return flattenExp(n.expr, n.nodes[0])
 
 	elif isinstance(n, Discard):
 		return flattenExp(n.expr, genSym() )
@@ -48,19 +50,21 @@ def flattenStmt(n):
 
 def flattenExp(n, x):
 	if isinstance(n, Add):
-		a = genSym()
+
+		a= genSym()
 		b = genSym()
-		print "hi"
 		l=flattenExp(n.left, a)
 		r=flattenExp(n.right, b)
-		return [ r, l, Assign(x, Add(a,b))]
+		add=Add(a,b)
+		add.left=Name(a)
+		add.right=Name(b)
+
+		return [ r, l, Assign(x,add)]
 
 	elif isinstance(n, Const):
-		return [Assign(AssName(x, None), n)]
 
-	elif isinstance(n,Assign):
-		print "ass"
-		return 0
+		return [Assign(AssName(x, 'OP_ASSIGN'),n)]
+
 
 
 
@@ -71,7 +75,7 @@ def flattenExp(n, x):
 		
 def genSym():
 	global varName
-	name= "%"+ str(varName)
+	name= '%'+ str(varName)
 	varName += 1
 	return name
 	
