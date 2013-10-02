@@ -48,6 +48,14 @@ def flattenStmt(n):
 
 	elif isinstance(n, Discard):
 		return flattenExp(n.expr, genSym() )
+	
+	elif isinstance(n, Printnl):
+		if (len(n.nodes) != 1):
+			sys.exit('Miss an element to print.')
+		a = genSym()
+		t1 = flattenExp(n.nodes[0], a)
+		return [Printnl([t1], None)]
+		
 
 
 
@@ -73,6 +81,9 @@ def flattenExp(n, x):
 	elif isinstance(n,RightShift):
 		op=RightShift(a,b)
 		return binOp(n,x,op)
+	elif isinstance(n, Power):
+		op = Power(a,b)
+		return binOp(n, x, op)
 	elif isinstance(n,UnarySub):
 		a=genSym()
 		flattened = flattenExp(n.expr,a)
