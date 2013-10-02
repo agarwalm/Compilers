@@ -75,53 +75,137 @@ def flattenExp(n, x):
 		return binOp(n,x,op)
 	elif isinstance(n,UnarySub):
 		a=genSym()
-	#	b=genSym()
-		#z=Const(0)
 		flattened = flattenExp(n.expr,a)
 		flattened.append(ast.UnarySub(ast.Name(a)))
-		# - (2*3)
-		# UnarySub(Mul((Const(2), Const(3)))
-		# [ Assign([AssName("tmp1")], Mul((Const(2), Const(3)))), Assign([AssName('tmp2')], UnarySub(Name('tmp1'))), Discard(Name(tmp2))]
-		# [ Discard(expr) -> Assign([tmp], flattended_discard), Discard(tmp) ]
-		#flattenExp(z,b)
-		#op=Sub(a,z)
 		return flattened
 	
+
 	elif isinstance(n, Bitand):
-		if(len(n.nodes) == 2):
-			a = genSym()
-			b = genSym()
-			flattened_exp1 = flattenExp(n.nodes[0], a)
-			flattened_exp2 = flattenExp(n.nodes[1], b)
-			op = Bitand([a,b])
-			
-			op.nodes[0] = Name(a)
-			op.nodes[1] = Name(b)
+		var = dict()
+		lst = []
+		a = genSym()
+		b = genSym()
+		flattened_exp1 = flattenExp(n.nodes[0], a)
+		flattened_exp2 = flattenExp(n.nodes[1], b)
+		op = Bitand([a,b])
 		
-		#c = genSym()
-		#d = genSym()
-		#op = Bitand([n.nodes[0], n.nodes[1]])
-		temp1 = Bitand([n.nodes[0], n.nodes[1]])
-		temps = [temp1]
-		for i in range(2, len(n.nodes)):
-			temp2 = Bitand([temp1[-1], n.nodes[i]])
-			temps.append(temp2)
+		op.nodes[0] = Name(a)
+		op.nodes[1] = Name(b)
 		
-		elif(len(n.nodes)>2):
-			for i in range(0, len(n.nodes)):
-				temp = flattenExp(Bitand([n.nodes[i], Bitand([n.nodes[i+1:]])]), x)
-		
-		
-		
-		#elif(len(n.nodes)>2):
-		#	flattenExp(Bitand([n.nodes[0], Bitand([n.nodes[1:]])]), x)
-			
 		if (not isinstance(x,AssName)):
 			x=[AssName(x,'OP_ASSIGN')]
-		return [flattened_exp1, flattened_exp2, Assign(x, op) ]
+		
+		if (len(n.nodes)==2):
+
+			return [flattened_exp1, flattened_exp2, Assign(x, op) ]
+		
+		
+		lst.append(flattened_exp1)
+		lst.append(flattened_exp2)
+		lst.append(Assign(x, op))
+			
+		currentVar = x
+		
+			
+		for i in range(2, len(n.nodes)):
+			c = genSym()
+			d = genSym()
+			flattenExpTemp = flattenExp(n.nodes[i], d)
+			lst.append(flattenExpTemp)
+			opTemp = Bitand([currentVar, d])
+			
+			if (not isinstance(c,AssName)):
+				c=[AssName(c,'OP_ASSIGN')]
+				
+			lst.append(Assign(c, opTemp))
+			currentVar = c
+		
+		return lst
+		
 	
+	elif isinstance(n, Bitor):
+		var = dict()
+		lst = []
+		a = genSym()
+		b = genSym()
+		flattened_exp1 = flattenExp(n.nodes[0], a)
+		flattened_exp2 = flattenExp(n.nodes[1], b)
+		op = Bitor([a,b])
+		
+		op.nodes[0] = Name(a)
+		op.nodes[1] = Name(b)
+		
+		if (not isinstance(x,AssName)):
+			x=[AssName(x,'OP_ASSIGN')]
+		
+		if (len(n.nodes)==2):
 
+			return [flattened_exp1, flattened_exp2, Assign(x, op) ]
+		
+		
+		lst.append(flattened_exp1)
+		lst.append(flattened_exp2)
+		lst.append(Assign(x, op))
+			
+		currentVar = x
+		
+			
+		for i in range(2, len(n.nodes)):
+			c = genSym()
+			d = genSym()
+			flattenExpTemp = flattenExp(n.nodes[i], d)
+			lst.append(flattenExpTemp)
+			opTemp = Bitor([currentVar, d])
+			
+			if (not isinstance(c,AssName)):
+				c=[AssName(c,'OP_ASSIGN')]
+				
+			lst.append(Assign(c, opTemp))
+			currentVar = c
+		
+		return lst
+	
+	elif isinstance(n, Bitxor):
+		var = dict()
+		lst = []
+		a = genSym()
+		b = genSym()
+		flattened_exp1 = flattenExp(n.nodes[0], a)
+		flattened_exp2 = flattenExp(n.nodes[1], b)
+		op = Bitxor([a,b])
+		
+		op.nodes[0] = Name(a)
+		op.nodes[1] = Name(b)
+		
+		if (not isinstance(x,AssName)):
+			x=[AssName(x,'OP_ASSIGN')]
+		
+		if (len(n.nodes)==2):
 
+			return [flattened_exp1, flattened_exp2, Assign(x, op) ]
+		
+		
+		lst.append(flattened_exp1)
+		lst.append(flattened_exp2)
+		lst.append(Assign(x, op))
+			
+		currentVar = x
+		
+			
+		for i in range(2, len(n.nodes)):
+			c = genSym()
+			d = genSym()
+			flattenExpTemp = flattenExp(n.nodes[i], d)
+			lst.append(flattenExpTemp)
+			opTemp = Bitxor([currentVar, d])
+			
+			if (not isinstance(c,AssName)):
+				c=[AssName(c,'OP_ASSIGN')]
+				
+			lst.append(Assign(c, opTemp))
+			currentVar = c
+		
+		return lst
 
 
 	elif isinstance(n, Const):
@@ -198,7 +282,7 @@ def genSym():
 
 
 
-print flatten(ast)
+flatten(ast)
 
 
 #TODO: after we have the flattened AST, we need to traverse it and generate LLVM code for each variable 
