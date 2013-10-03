@@ -15,6 +15,7 @@ filePath = sys.argv[1]
 
 #abstract syntax tree for the contents of the file
 ast = compiler.parseFile(filePath)
+print ast
 #print ast
 #print ast
 #dict to keep track of the mapping of variable names to stack slots
@@ -24,279 +25,208 @@ varToStack = {}
 #by genSym()
 varName = 0
 vaD={}
+flatStmts = [];
 
 
 #takes a non flattened ast and returns a flattened ast
 def flatten(n):
-
+	
 	if isinstance(n, Module):
-		#print n
-		return Module(None, flatten(n.node))
-
+		flatten(n.node)
+	#iterate through all of the statement nodes 
 	elif isinstance(n, Stmt):
-		stmt=[]
 		for x in n.nodes:
-			y=flattenStmt(x)
-			stmt.append(y)
-			print y
-		return Stmt(stmt)
+			flattenStmt(x)
+	
+	else:
+		raise Exception('unrecognized AST')
 
 def flattenStmt(n):
+	#if you have an Assign, then use the given variable to assign
+	#to the expression
 	if isinstance(n, Assign):
-		return flattenExp(n.expr, n.nodes[0])
-
-
+		if isinstance(n.expr, Name):
+			temp = Assign([AssName(genSymFromVar(n.nodes[0].name),'OP_ASSIGN')],flattenExp(n.expr,None))
+			flatStmts.append(temp)
+			
+		else:
+			flattenExp(n.expr, genSymFromVar(n.nodes[0].name))
+		
+	#if you have a discard, then generate a variable to assign
+	#to the expression
 	elif isinstance(n, Discard):
-		return flattenExp(n.expr, genSym() )
-	
+		flattenExp(n.expr, genSym())
+		
 	elif isinstance(n, Printnl):
 		if (len(n.nodes) != 1):
 			sys.exit('Miss an element to print.')
 		a = genSym()
+		b = genSym()
 		t1 = flattenExp(n.nodes[0], a)
-		return [Printnl([t1], None)]
+		n.nodes[0] =Name(t1)
+		temp = Assign([AssName(b, 'OP_ASSIGN')], n)
+		flatStmts.append(temp)
+		return b
+	
+	elif isinstance(n, AugAssign):
+		a = genSym()
+		flattened_expr = flattenExp(n.expr, a)
+		t1 = Name(flattened_expr)
+		n.expr = t1
+		temp = Assign([AssName(n.node, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
+	
+	else:
+		raise Exception('unrecognized AST')
 		
-
 
 
 def flattenExp(n, x):
-	#Add instance
-	a='%N'
-	b='%N'
-	if isinstance(n, Add):
-		op=Add(a,b)
-		return binOp(n,x,op)
-	elif isinstance(n,Sub):
-		op=Sub(a,b)
-		return binOp(n,x,op)
-	elif isinstance(n,Mul):
-		op=Mul(a,b)
-		return binOp(n,x,op)
-	elif isinstance(n,Div):
-		op=Div(a,b)
-		return binOp(n,x,op)
-	elif isinstance(n,LeftShift):
-		op=LeftShift(a,b)
-		return binOp(n,x,op)
-	elif isinstance(n,RightShift):
-		op=RightShift(a,b)
-		return binOp(n,x,op)
-	elif isinstance(n, Power):
-		op = Power(a,b)
-		return binOp(n, x, op)
-	elif isinstance(n,UnarySub):
-		a=genSym()
-		flattened = flattenExp(n.expr,a)
-		flattened.append(ast.UnarySub(ast.Name(a)))
-		return flattened
+	#assign a constant to the given variable and append to list
+	if isinstance(n,Const):
+		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
+		return x
+	#if we have a name, return a variable of the form %v
+	if isinstance(n,Name):
+		return genSymFromVar(n.name)
 	
 
-	elif isinstance(n, Bitand):
+	if isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n, Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
+		#generate symbols a and b 
+		a = genSym()
+		b = genSym()
+		#use them to assign to constants (or if Names are the operands, will just return variable)
+		leftStmt = flattenExp(n.left, a )
+		rightStmt = flattenExp(n.right, b)
+		#now we use the same operator object n and just change its left and right values
+		n.left = Name(leftStmt)
+		n.right = Name(rightStmt)
+		#assign the add operation n to the varialbe x and append to the statements list
+		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
+		return x
+
+	if isinstance(n,UnarySub):
+		#tempExpr will take the value of the name assigned to it
+		tempExpr = flattenExp(n.expr, x)
+		#change the expression of the unary sub to the variable you assigned
+		#to its expression when you flattened it
+		n.expr = tempExpr
+		#now assign the modified UnarySub, n, to variable x
+		#and append it to the list
+		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
+		return x
+
+	if isinstance(n, Bitand) or isinstance(n,Bitor) or isinstance(n, Bitxor):
 		var = dict()
 		lst = []
+		#generate symbols and assign them to the first two
+		#nodes of the bit operator
 		a = genSym()
 		b = genSym()
 		flattened_exp1 = flattenExp(n.nodes[0], a)
 		flattened_exp2 = flattenExp(n.nodes[1], b)
-		op = Bitand([a,b])
 		
-		op.nodes[0] = Name(a)
-		op.nodes[1] = Name(b)
+		#create the propper operation for the assignment
+		if isinstance(n, Bitand):
+			op = Bitand([Name(flattened_exp1),Name(flattened_exp2)])
+		elif isinstance(n, Bitor):
+			op = Bitor([Name(flattened_exp1),Name(flattened_exp2)])
+		elif isinstance(n, Bitxor):
+			op = Bitxor([Name(flattened_exp1),Name(flattened_exp2)])
 		
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
+		#make the assignment to the bit operator needed and add it to the
+		#flatStmts list
+		temp = Assign([AssName(x, 'OP_ASSIGN')],op)
+		flatStmts.append(temp)
 		
-		if (len(n.nodes)==2):
-
-			return [flattened_exp1, flattened_exp2, Assign(x, op) ]
+		#if you only have 2 operands,
+		#add the assignment to the flatStmts list
+		#note: the constant assignments were already made when you
+		#called flattenExp on n.nodes[0] and n.nodes[1]
+		if len(n.nodes)==2:
+			return x
 		
-		
-		lst.append(flattened_exp1)
-		lst.append(flattened_exp2)
-		lst.append(Assign(x, op))
+		#if you have more than two operands to bitAnd
+		#you have to iterate through the list of nodes
+		else:
+			#the last variable that you assigned a bitAnd to
+			currentVar = x
 			
-		currentVar = x
-		
-			
-		for i in range(2, len(n.nodes)):
-			c = genSym()
-			d = genSym()
-			flattenExpTemp = flattenExp(n.nodes[i], d)
-			lst.append(flattenExpTemp)
-			opTemp = Bitand([currentVar, d])
-			
-			if (not isinstance(c,AssName)):
-				c=[AssName(c,'OP_ASSIGN')]
+			for i in range(2, len(n.nodes)):
+				c = genSym()
+				d = genSym()
 				
-			lst.append(Assign(c, opTemp))
-			currentVar = c
+				flattenExpTemp = flattenExp(n.nodes[i], d)
+				if isinstance(n, Bitand):
+					opTemp = Bitand([Name(currentVar), Name(flattenExpTemp)])
+				elif isinstance(n, Bitor):
+					opTemp = Bitor([Name(currentVar), Name(flattenExpTemp)])
+				elif isinstance(n, Bitxor):
+					opTemp = Bitxor([Name(currentVar), Name(flattenExpTemp)])
+				
+				temp = Assign([AssName(c, 'OP_ASSIGN')], opTemp)
+				flatStmts.append(temp)
+				
+				currentVar = c
+			#this return value isn't actually needed
+			#but just for the sake of consistency it is being returned
+			return currentVar
+
 		
-		return lst
-		
-	
-	elif isinstance(n, Bitor):
-		var = dict()
+				
+	elif isinstance(n, CallFunc):
 		lst = []
-		a = genSym()
-		b = genSym()
-		flattened_exp1 = flattenExp(n.nodes[0], a)
-		flattened_exp2 = flattenExp(n.nodes[1], b)
-		op = Bitor([a,b])
-		
-		op.nodes[0] = Name(a)
-		op.nodes[1] = Name(b)
-		
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		
-		if (len(n.nodes)==2):
-
-			return [flattened_exp1, flattened_exp2, Assign(x, op) ]
-		
-		
-		lst.append(flattened_exp1)
-		lst.append(flattened_exp2)
-		lst.append(Assign(x, op))
-			
-		currentVar = x
-		
-			
-		for i in range(2, len(n.nodes)):
-			c = genSym()
-			d = genSym()
-			flattenExpTemp = flattenExp(n.nodes[i], d)
-			lst.append(flattenExpTemp)
-			opTemp = Bitor([currentVar, d])
-			
-			if (not isinstance(c,AssName)):
-				c=[AssName(c,'OP_ASSIGN')]
-				
-			lst.append(Assign(c, opTemp))
-			currentVar = c
-		
-		return lst
+		for i in range(0, len(n.args)):
+			a = genSym()
+			flattened_expr = flattenExp(n.args[i], a)
+			lst.append(Name(flattened_expr))
+		n.args = lst
+		temp = Assign([AssName(x, 'OP_ASSIGN')], n)
+		flatStmts.append(temp)
+		return x
 	
-	elif isinstance(n, Bitxor):
-		var = dict()
-		lst = []
-		a = genSym()
-		b = genSym()
-		flattened_exp1 = flattenExp(n.nodes[0], a)
-		flattened_exp2 = flattenExp(n.nodes[1], b)
-		op = Bitxor([a,b])
-		
-		op.nodes[0] = Name(a)
-		op.nodes[1] = Name(b)
-		
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		
-		if (len(n.nodes)==2):
-
-			return [flattened_exp1, flattened_exp2, Assign(x, op) ]
-		
-		
-		lst.append(flattened_exp1)
-		lst.append(flattened_exp2)
-		lst.append(Assign(x, op))
-			
-		currentVar = x
-		
-			
-		for i in range(2, len(n.nodes)):
-			c = genSym()
-			d = genSym()
-			flattenExpTemp = flattenExp(n.nodes[i], d)
-			lst.append(flattenExpTemp)
-			opTemp = Bitxor([currentVar, d])
-			
-			if (not isinstance(c,AssName)):
-				c=[AssName(c,'OP_ASSIGN')]
-				
-			lst.append(Assign(c, opTemp))
-			currentVar = c
-		
-		return lst
-
-
-	elif isinstance(n, Const):
-
-		return [Assign(AssName(x, 'OP_ASSIGN'),n)]
-
-	elif isinstance(n,Name):
-		return Name(n.name)
-	elif isinstance(n,AssName):
-		print "hello"
-		return
-
-
-
-
-def binOp(n,x,op):
-	if ((isinstance(n.left,Const))and (isinstance(n.right,Const))):
-		a=genSym()
-		b=genSym()
-		l=flattenExp(n.left, a)
-		r=flattenExp(n.right, b)
-		op.left=Name(a)
-		op.right=Name(b)
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		return [l,r,Assign(x,op)]
-
-	elif(isinstance(n.left,Name)):
-		a=genSym()
-		r=flattenExp(n.right, a)
-		op.left=n.left
-		op.right=Name(a)
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		return [r, Assign(x,op)]
-		
-	elif(isinstance(n.right,Name)):
-		a=genSym()
-		l=flattenExp(n.left, a)
-		op.left=Name(a)
-		op.right=n.right
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		return [ l,Assign(x,op)]
-	elif(isinstance(n.left,Name)and(isinstance(n.right,Name))):
-		op.left=n.left
-		op.right=n.right
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		return [Assign(x,op)]
+	
 	else:
-		a=genSym()
-		b=genSym()
-		l=flattenExp(n.left,a)
-		r=flattenExp(n.right,b)
-		op.left=Name(a)
-		op.right=Name(b)
-		if (not isinstance(x,AssName)):
-			x=[AssName(x,'OP_ASSIGN')]
-		return [l,r,Assign(x,op)]
-
-
-
+		raise Exception('unrecognized AST')
 		
+			
+			
+			
+			
+		
+
+
+	
+
+
+
+
+
+
+#generates a unique variable name
 def genSym():
 	global varName
 	name= '%'+ str(varName)
 	varName += 1
 	return name
-	
+
+#adds a % infront of a given variable name to generate
+#an llvm-friendly variable
+def genSymFromVar(v):
+	vStr = "%"+v
+	return vStr
 
 	
 
 
 
 
-flatten(ast)
+print flatten(ast)
+print flatStmts
 
-
-#TODO: after we have the flattened AST, we need to traverse it and generate LLVM code for each variable 
 
 
 
