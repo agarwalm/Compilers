@@ -178,27 +178,18 @@ def genSymFromVar(v):
 	return vStr
 
 
-def genSym():
-	global varName
-	name= '%'+ str(varName)
-	varName += 1
-	return name
-
-
-
+#generates llvm code from an Assign statement
 def astToLLVM(ast):
 	
 	
 	if isinstance(ast, Assign):
 		print astToLLVM(ast.nodes[0])+ " = "+ astToLLVM(ast.expr)
 	
-	
 	elif isinstance(ast, Const):
 		o = constant(ast);
 		return o.toString
 	
 	elif isinstance(ast, Add):
-		print ast
 		return createOpObj(ast,"add")
 	
 	
@@ -214,25 +205,22 @@ def astToLLVM(ast):
 	elif isinstance(ast, AssName):
 		return ast.name
 	
-	elif isinstance(ast, list):
-		return astToLLVM(ast[0])
-	
-	
 	elif isinstance(ast, Name):
 		return ast.name
 
+	elif isinstance(ast, UnarySub):
+		
 
 
 
+#creates an llvmOp object for a specified operator (add, sub, mul, div or power)
 def createOpObj(ast, s):
 	a = astToLLVM(ast.left)
 	b = astToLLVM(ast.right)
 	obj = llvmOp(a, b, s)
 	return obj.toString
 
-
-
-
+#class for operators (add, sub, mul, div or power)
 class llvmOp:
 	def __init__(self, l, r, op):
 		self.left = l
@@ -240,13 +228,13 @@ class llvmOp:
 		self.operation = op
 		self.toString = op+" i32 4 "+self.left+", "+self.right
 
-
+#class for constants
 class constant:
 	def __init__(self, c):
 		self.val = c.value;
 		self.toString = str(self.val)
 
-class 
+
 
 	
 
