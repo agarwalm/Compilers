@@ -109,7 +109,7 @@ def flattenExp(n, x):
 		flatStmts.append(temp)
 		return x
 
-	if isinstance(n,UnarySub):
+	if isinstance(n,UnarySub) or isinstance(n, UnaryAdd):
 		#tempExpr will take the value of the name assigned to it
 		tempExpr = flattenExp(n.expr, x)
 		#change the expression of the unary sub to the variable you assigned
