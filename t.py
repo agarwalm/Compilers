@@ -26,6 +26,7 @@ def compile():
 	#flatten the ast
 	#(fill the flatStmts tree with assignment statements)
 	flatten(ast)
+	print "statements list after flattening: ", flatStmts
 	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
@@ -55,7 +56,7 @@ def flattenStmt(n):
 	#to the expression
 	if isinstance(n, Assign):
 		if isinstance(n.expr, Name):
-			temp = Assign([AssName(genSymFromVar(n.nodes[0].name),'OP_ASSIGN')],flattenExp(n.expr,None))
+			temp = Assign([AssName(genSymFromVar(n.nodes[0].name),'OP_ASSIGN')],Name(flattenExp(n.expr,None)))
 			flatStmts.append(temp)
 			
 		else:
@@ -97,7 +98,7 @@ def flattenExp(n, x):
 		tempExpr = flattenExp(n.expr, x)
 		#change the expression of the unary sub to the variable you assigned
 		#to its expression when you flattened it
-		n.expr = tempExpr
+		n.expr = Name(tempExpr)
 		#now assign the modified UnarySub, n, to variable x
 		#and append it to the list
 		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
@@ -167,14 +168,14 @@ def flattenExp(n, x):
 #generates a unique variable name
 def genSym():
 	global varName
-	name= '%'+ str(varName)
+	name= '%.'+ str(varName)
 	varName += 1
 	return name
 
 #adds a % infront of a given variable name to generate
 #an llvm-friendly variable
 def genSymFromVar(v):
-	vStr = "%"+v
+	vStr = "%."+v
 	return vStr
 
 
@@ -201,6 +202,18 @@ def astToLLVM(ast):
 	
 	elif isinstance(ast, Div):
 		return createOpObj(ast,"div")
+
+	elif isinstance(ast, Power):
+		return createOpObj(ast, "pow")
+
+	elif isinstance(ast, Mod):
+		return createOpObj(ast, "mod")
+
+	elif isinstance(ast, LeftShift):
+		return createOpObj(ast,"LeftShift")
+
+	elif isinstance(ast, RightShift):
+		return createOpObj(ast, "RightShift")
 	
 	elif isinstance(ast, AssName):
 		return ast.name
@@ -209,6 +222,8 @@ def astToLLVM(ast):
 		return ast.name
 
 	elif isinstance(ast, UnarySub):
+		o = unarySub(ast)
+		return o.toString
 		
 
 
@@ -233,6 +248,16 @@ class constant:
 	def __init__(self, c):
 		self.val = c.value;
 		self.toString = str(self.val)
+
+class unarySub:
+	def __init__(self, u):
+		self.exp = str(astToLLVM(u.expr))
+		self.toString = "However you express: -"+self.exp+" in llvm"
+
+#class printClass:
+#	def __init__(self,u):
+#		self.
+		
 
 
 
