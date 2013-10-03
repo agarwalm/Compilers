@@ -75,6 +75,8 @@ def flattenStmt(n):
 		n.expr = t1
 		temp = Assign([AssName(n.node, 'OP_ASSIGN')],n)
 		flatStmts.append(temp)
+		
+	
 	
 	else:
 		raise Exception('unrecognized AST')
@@ -174,6 +176,14 @@ def flattenExp(n, x):
 			#this return value isn't actually needed
 			#but just for the sake of consistency it is being returned
 			return currentVar
+	
+	elif isinstance(n, Invert):
+		a = genSym()
+		flattened_expr = flattenExp(n.expr, a)
+		t1 = Name(flattened_expr)
+		n.expr = t1
+		temp = Assign([AssName(n.expr, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
 
 		
 				
@@ -187,6 +197,8 @@ def flattenExp(n, x):
 		temp = Assign([AssName(x, 'OP_ASSIGN')], n)
 		flatStmts.append(temp)
 		return x
+	
+	
 	
 	
 	else:
