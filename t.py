@@ -16,6 +16,8 @@ varName = 0
 #the list of flattened statement nodes
 flatStmts = [];
 
+#gets creates an ast from the contenst of a file name given as an argument
+#generates LLVM code from the contents of the file
 def compile():
 	#the file to interpret is the first argument given
 	filePath = sys.argv[1]
@@ -241,17 +243,29 @@ def genSymFromVar(v):
 	vStr = "%."+v
 	return vStr
 
+#prints all alloca instructions for the variables in the flatStmts list
+def alloc():
+	
+	lst = []
+	for element in flatStmts:
+		if element.nodes[0].name not in lst:
+			lst.append(element.nodes[0].name)
+	for element in lst:
+		print "	 "+element + " = alloca i32, align 4"
 
-#generates llvm code from an Assign statement
+
+#generates llvm code from the Assign statements in the flatStmts list
 def astToLLVM(ast, x):
 	
 	
 	if isinstance(ast, Assign):
+		#if the assign statement has only one constant to the right of the equals sign, output a store instruction
 		if isinstance(ast.expr, Const):
 			print "	 "+ "store i32 "+str(ast.expr.value)+", i32* " + ast.nodes[0].name+", align 4"
+		#otherwise it means there is a more complex expression to the right of the equals sign
+		#we need to go deeper
 		else:
 			astToLLVM(ast.expr, ast.nodes[0].name)
-	
 	
 	elif isinstance(ast, Const):
 		o = constant(ast);
@@ -259,7 +273,6 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, Add):
 		return createOpObj(ast, x, "add")
-	
 	
 	elif isinstance(ast, Sub):
 		return createOpObj(ast,x,"sub")
@@ -291,31 +304,20 @@ def astToLLVM(ast, x):
 	elif isinstance(ast, UnarySub):
 		o = unarySub(ast)
 		return o.toString
-
+	
 	elif isinstance(ast, load):
 		return ast.toString
-		
-def alloc():
-
-	lst = []
-	for element in flatStmts:
-		if element.nodes[0].name not in lst:
-			lst.append(element.nodes[0].name)
-	for element in lst:
-		print "	 "+element + " = alloca i32, align 4"
 
 		
 	
-	
-
-
-
 #creates an llvmOp object for a specified operator (add, sub, mul, div or power)
+#returns the generated code
 def createOpObj(ast, x, op):
+	#get the value of .left and .right (will either be a variable or a constant)
 	l = astToLLVM(ast.left,x)
 	r = astToLLVM(ast.right,x)
-	varName = x
-	obj = llvmOp(l, r, op, varName)
+	#creates the an llvmOp object with the propper operation
+	obj = llvmOp(l, r, op, x)
 	return obj.codegen()
 
 
@@ -326,27 +328,27 @@ class llvmOp:
 		self.right = r
 		self.operation = op
 		self.assignTo = x
-
+	#generates certain lines of llvm code that needs to be printed for a given operation
 	def codegen(self):
+		#must create temporary variables for the load operations
 		a = genSym()
 		b = genSym()
 		obj1 = load(self.left, a)
 		obj2 = load(self.right, b)
-
+		#temporary variable to store the operation before it can be stored in x
 		c = genSym()
+		#create assignments for the temporary variables
 		temp1 = Assign([AssName(a, 'OP_ASSIGN')], obj1)
 		temp2 = Assign([AssName(b, 'OP_ASSIGN')], obj2)
+		#prints the store statements
 		print astToLLVM(obj1, a)
 		print astToLLVM(obj2, b)
+		#stores the operation result in temp var c
 		print "	 "+c+" = "+self.operation+" nsw i32 "+a+", "+b
+		#stores contents of c in x
 		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
-		return "hello"
-	
-		
-#	def codegen2(self):
 		
 		
-
 #class for constants
 class constant:
 	def __init__(self, c):
@@ -358,10 +360,10 @@ class unarySub:
 		self.exp = str(astToLLVM(u.expr))
 		self.toString = "However you express: -"+self.exp+" in llvm"
 
-#class printClass:
-#	def __init__(self,u):
-#		self.
-		
+
+#a load class to make printing the load instruction easier
+#tentative TODO: maybe make a class for store instructions as well?
+#just for the sake of consistency. or not. whatever.
 class load:
 	def __init__(self, var,a):
 		self.toString = "	 "+a+" = load i32* "+ var+", align 4"
@@ -369,9 +371,7 @@ class load:
 
 	
 
-
-
-
+#calls compile to start the program
 compile()
 
 
