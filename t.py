@@ -22,12 +22,17 @@ def compile():
 	
 	#abstract syntax tree for the contents of the file
 	ast = compiler.parseFile(filePath)
-	print "original ast: ", ast, "\n ********"
+	#print "original ast: ", ast, "\n ********"
 	#flatten the ast
 	#(fill the flatStmts tree with assignment statements)
 	flatten(ast)
-	print "statements list after flattening: ", flatStmts
+	
+	#output first line needed for the .ll file
+	print "define i32 @main() nounwind uwtable ssp {"
+	
+	#print "statements list after flattening: ", flatStmts
 	alloc()
+	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
 	#an alloca for each variable (so you don't have to worry about it later)
@@ -36,7 +41,11 @@ def compile():
 	#flattening (located in flatStmts list)
 	#and generate LLVM code
 	for s in flatStmts:
-		astToLLVM(s)
+		astToLLVM(s, None)
+	
+	#output what you need for the end of the main function in the .ll file
+	print "	 "+"ret i32 0"
+	print "}"
 		
 
 
@@ -68,6 +77,32 @@ def flattenStmt(n):
 	elif isinstance(n, Discard):
 		flattenExp(n.expr, genSym())
 
+	elif isinstance(n, Printnl):
+		if (len(n.nodes) != 1):
+			sys.exit('Miss an element to print.')
+			a = genSym()
+			b = genSym()
+			t1 = flattenExp(n.nodes[0], a)
+			n.nodes[0] =Name(t1)
+			temp = Assign([AssName(b, 'OP_ASSIGN')], n)
+			flatStmts.append(temp)
+			return b
+	
+	elif isinstance(n, AugAssign):
+		a = genSym()
+		flattened_expr = flattenExp(n.expr, a)
+		t1 = Name(flattened_expr)
+		n.expr = t1
+		temp = Assign([AssName(n.node, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
+
+
+
+	else:
+		raise Exception('unrecognized AST')
+
+
+
 def flattenExp(n, x):
 	#assign a constant to the given variable and append to list
 	if isinstance(n,Const):
@@ -79,7 +114,7 @@ def flattenExp(n, x):
 		return genSymFromVar(n.name)
 	
 
-	if isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power):
+	if isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
 		#generate symbols a and b 
 		a = genSym()
 		b = genSym()
@@ -94,7 +129,7 @@ def flattenExp(n, x):
 		flatStmts.append(temp)
 		return x
 
-	if isinstance(n,UnarySub):
+	if isinstance(n,UnarySub) or isinstance(n, UnaryAdd):
 		#tempExpr will take the value of the name assigned to it
 		tempExpr = flattenExp(n.expr, x)
 		#change the expression of the unary sub to the variable you assigned
@@ -162,6 +197,33 @@ def flattenExp(n, x):
 			#but just for the sake of consistency it is being returned
 			return currentVar
 
+	elif isinstance(n, Invert):
+		a = genSym()
+		flattened_expr = flattenExp(n.expr, a)
+		t1 = Name(flattened_expr)
+		n.expr = t1
+		temp = Assign([AssName(n.expr, 'OP_ASSIGN')],n)
+		flatStmts.append(temp)
+
+
+
+	elif isinstance(n, CallFunc):
+		lst = []
+		for i in range(0, len(n.args)):
+			a = genSym()
+			flattened_expr = flattenExp(n.args[i], a)
+			lst.append(Name(flattened_expr))
+		n.args = lst
+		temp = Assign([AssName(x, 'OP_ASSIGN')], n)
+		flatStmts.append(temp)
+		return x
+	
+	
+	
+	
+	else:
+		raise Exception('unrecognized AST')
+
 		
 				
 			
@@ -181,18 +243,22 @@ def genSymFromVar(v):
 
 
 #generates llvm code from an Assign statement
-def astToLLVM(ast):
+def astToLLVM(ast, x):
 	
 	
 	if isinstance(ast, Assign):
-		print astToLLVM(ast.nodes[0])+ " = "+ astToLLVM(ast.expr)
+		if isinstance(ast.expr, Const):
+			print "	 "+ "store i32 "+str(ast.expr.value)+", i32* " + ast.nodes[0].name+", align 4"
+		else:
+			astToLLVM(ast.expr, ast.nodes[0].name)
+	
 	
 	elif isinstance(ast, Const):
 		o = constant(ast);
 		return o.toString
 	
 	elif isinstance(ast, Add):
-		return createOpObj(ast,"add")
+		return createOpObj(ast, x, "add")
 	
 	
 	elif isinstance(ast, Sub):
@@ -225,14 +291,19 @@ def astToLLVM(ast):
 	elif isinstance(ast, UnarySub):
 		o = unarySub(ast)
 		return o.toString
+
+	elif isinstance(ast, load):
+		return ast.toString
 		
 def alloc():
+
 	lst = []
 	for element in flatStmts:
 		if element.nodes[0].name not in lst:
 			lst.append(element.nodes[0].name)
 	for element in lst:
-		print element + " = alloc i32, align 4"
+		print "	 "+element + " = alloca i32, align 4"
+
 		
 	
 	
@@ -240,19 +311,41 @@ def alloc():
 
 
 #creates an llvmOp object for a specified operator (add, sub, mul, div or power)
-def createOpObj(ast, s):
-	a = astToLLVM(ast.left)
-	b = astToLLVM(ast.right)
-	obj = llvmOp(a, b, s)
-	return obj.toString
+def createOpObj(ast, x, op):
+	l = astToLLVM(ast.left,x)
+	r = astToLLVM(ast.right,x)
+	varName = x
+	obj = llvmOp(l, r, op, varName)
+	return obj.codegen()
+
 
 #class for operators (add, sub, mul, div or power)
 class llvmOp:
-	def __init__(self, l, r, op):
+	def __init__(self, l, r, op, x):
 		self.left = l
 		self.right = r
 		self.operation = op
-		self.toString = op+" i32 4 "+self.left+", "+self.right
+		self.assignTo = x
+
+	def codegen(self):
+		a = genSym()
+		b = genSym()
+		obj1 = load(self.left, a)
+		obj2 = load(self.right, b)
+
+		c = genSym()
+		temp1 = Assign([AssName(a, 'OP_ASSIGN')], obj1)
+		temp2 = Assign([AssName(b, 'OP_ASSIGN')], obj2)
+		print astToLLVM(obj1, a)
+		print astToLLVM(obj2, b)
+		print "	 "+c+" = "+self.operation+" nsw i32 "+a+", "+b
+		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
+		return "hello"
+	
+		
+#	def codegen2(self):
+		
+		
 
 #class for constants
 class constant:
@@ -269,7 +362,9 @@ class unarySub:
 #	def __init__(self,u):
 #		self.
 		
-
+class load:
+	def __init__(self, var,a):
+		self.toString = "	 "+a+" = load i32* "+ var+", align 4"
 
 
 	
