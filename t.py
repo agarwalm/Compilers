@@ -27,7 +27,7 @@ def compile():
 	#(fill the flatStmts tree with assignment statements)
 	flatten(ast)
 	print "statements list after flattening: ", flatStmts
-	
+	alloc()
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
 	#an alloca for each variable (so you don't have to worry about it later)
@@ -37,6 +37,7 @@ def compile():
 	#and generate LLVM code
 	for s in flatStmts:
 		astToLLVM(s)
+		
 
 
 
@@ -225,6 +226,16 @@ def astToLLVM(ast):
 		o = unarySub(ast)
 		return o.toString
 		
+def alloc():
+	lst = []
+	for element in flatStmts:
+		if element.nodes[0].name not in lst:
+			lst.append(element.nodes[0].name)
+	for element in lst:
+		print element + " = alloc i32, align 4"
+		
+	
+	
 
 
 
