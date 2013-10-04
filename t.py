@@ -262,25 +262,25 @@ def astToLLVM(ast, x):
 	
 	
 	elif isinstance(ast, Sub):
-		return createOpObj(ast,"sub")
+		return createOpObj(ast,x,"sub")
 	
 	elif isinstance(ast, Mul):
-		return createOpObj(ast, "mul")
+		return createOpObj(ast,x, "mul")
 	
 	elif isinstance(ast, Div):
-		return createOpObj(ast,"div")
+		return createOpObj(ast,x,"div")
 
 	elif isinstance(ast, Power):
-		return createOpObj(ast, "pow")
+		return createOpObj(ast,x, "pow")
 
 	elif isinstance(ast, Mod):
-		return createOpObj(ast, "mod")
+		return createOpObj(ast,x, "mod")
 
 	elif isinstance(ast, LeftShift):
-		return createOpObj(ast,"LeftShift")
+		return createOpObj(ast,x,"LeftShift")
 
 	elif isinstance(ast, RightShift):
-		return createOpObj(ast, "RightShift")
+		return createOpObj(ast,x, "RightShift")
 	
 	elif isinstance(ast, AssName):
 		return ast.name
