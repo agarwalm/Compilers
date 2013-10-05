@@ -294,6 +294,15 @@ def astToLLVM(ast, x):
 
 	elif isinstance(ast, RightShift):
 		return createOpObj(ast,x, "RightShift")
+
+	elif isinstance(ast, Bitor):
+		return createBitOpObj(ast,x, "or")
+
+	elif isinstance(ast, Bitand):
+		return createBitOpObj(ast,x, "and")
+
+	elif isinstance(ast, Bitxor):
+		return createBitOpObj(ast,x, "xor")
 	
 	elif isinstance(ast, AssName):
 		return ast.name
@@ -317,6 +326,15 @@ def createOpObj(ast, x, op):
 	l = astToLLVM(ast.left,x)
 	r = astToLLVM(ast.right,x)
 	#creates the an llvmOp object with the propper operation
+	obj = llvmOp(l, r, op, x)
+	return obj.codegen()
+
+#creates an llvmOp object for a specified bitwise operator (and, or, xor)
+#the bit operators do not have a .left and .right, but because we flattened the
+#ast, each bitwise operator will only have two nodes .nodes[0] and .nodes[1]
+def createBitOpObj(ast,x,op):
+	l = astToLLVM(ast.nodes[0],x)
+	r = astToLLVM(ast.nodes[1],x)
 	obj = llvmOp(l, r, op, x)
 	return obj.codegen()
 
@@ -344,7 +362,7 @@ class llvmOp:
 		print astToLLVM(obj1, a)
 		print astToLLVM(obj2, b)
 		#stores the operation result in temp var c
-		print "	 "+c+" = "+self.operation+" nsw i32 "+a+", "+b
+		print "	 "+c+" = "+self.operation+" i32 "+a+", "+b
 		#stores contents of c in x
 		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
 		
