@@ -24,10 +24,12 @@ def compile():
 	
 	#abstract syntax tree for the contents of the file
 	ast = compiler.parseFile(filePath)
+	#print ast
 	#print "original ast: ", ast, "\n ********"
 	#flatten the ast
 	#(fill the flatStmts tree with assignment statements)
 	flatten(ast)
+	#print flatStmts
 	
 	#output first line needed for the .ll file
 	print "define i32 @main() nounwind uwtable ssp {"
@@ -281,19 +283,19 @@ def astToLLVM(ast, x):
 		return createOpObj(ast,x, "mul")
 	
 	elif isinstance(ast, Div):
-		return createOpObj(ast,x,"div")
+		return createOpObj(ast,x,"sdiv")
 
 	elif isinstance(ast, Power):
 		return createOpObj(ast,x, "pow")
 
 	elif isinstance(ast, Mod):
-		return createOpObj(ast,x, "mod")
+		return createOpObj(ast,x, "srem")
 
 	elif isinstance(ast, LeftShift):
-		return createOpObj(ast,x,"LeftShift")
+		return createOpObj(ast,x,"shl")
 
 	elif isinstance(ast, RightShift):
-		return createOpObj(ast,x, "RightShift")
+		return createOpObj(ast,x, "ashr")
 
 	elif isinstance(ast, Bitor):
 		return createBitOpObj(ast,x, "or")
@@ -311,8 +313,10 @@ def astToLLVM(ast, x):
 		return ast.name
 
 	elif isinstance(ast, UnarySub):
-		o = unarySub(ast)
-		return o.toString
+		return createUnaryOpObj(ast,x,"us")
+
+	elif isinstance(ast, UnarySub):
+		return createUnaryOpObj(ast,x,"ua")
 	
 	elif isinstance(ast, load):
 		return ast.toString
@@ -336,6 +340,16 @@ def createBitOpObj(ast,x,op):
 	l = astToLLVM(ast.nodes[0],x)
 	r = astToLLVM(ast.nodes[1],x)
 	obj = llvmOp(l, r, op, x)
+	return obj.codegen()
+
+#for UnarySub, just subtract the expression from 0
+def createUnaryOpObj(ast, x,op):
+	e = astToLLVM(ast.expr,x)
+	if(op == "us"):
+		obj = UnaryllvmOp(e,"sub",x)
+	else:
+		obj = UnaryllvmOp(e,"add",x)
+
 	return obj.codegen()
 
 
@@ -365,6 +379,21 @@ class llvmOp:
 		print "	 "+c+" = "+self.operation+" i32 "+a+", "+b
 		#stores contents of c in x
 		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
+
+#class for operators (UnaryAdd and UnarySub)
+class UnaryllvmOp:
+	def __init__(self,n,op,x):
+		self.operation = op
+		self.exp = n
+		self.assignTo = x
+	def codegen(self):
+		a = genSym()
+		obj = load(self.exp,a)
+		c = genSym()
+		temp = Assign([AssName(a, 'OP_ASSIGN')],obj)
+		print astToLLVM(obj, a)
+		print "	 "+c+" = "+self.operation+" i32 0, "+a
+		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
 		
 		
 #class for constants
@@ -373,10 +402,6 @@ class constant:
 		self.val = c.value;
 		self.toString = str(self.val)
 
-class unarySub:
-	def __init__(self, u):
-		self.exp = str(astToLLVM(u.expr))
-		self.toString = "However you express: -"+self.exp+" in llvm"
 
 
 #a load class to make printing the load instruction easier
