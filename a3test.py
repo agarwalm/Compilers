@@ -363,7 +363,10 @@ def p_binary_operators(p):
 				| expression lshift expression
 				| expression rshift expression
 				| expression floordiv expression
-				| expression and expression'''
+				| expression and expression
+				| expression or expression
+				| expression xor expression'''
+
 	if p[2] == '+':
 		p[0] = node.Add(p[1], p[3])
 	elif p[2] == '-':
@@ -384,14 +387,10 @@ def p_binary_operators(p):
 		p[0] = node.LeftShift(p[1], p[3])
 	elif p[2] == '&':
 		p[0] = node.Bitand(p[1],p[3])
-
-#def p_single_bitwise_explist(p):
-#	'exp_list : expression'
-#	p[0] = [p[1]]
-#
-#def p_bitwise_explist(p):
-#	'exp_list : exp_list expression'
-#	p[0] = p[1] + p[2]
+	elif p[2] == '|':
+		p[0] = node.Bitor(p[1],p[3])
+	elif p[2] == '^':
+		p[0] = node.Bitxor(p[1],p[3])
 	
 		
 def p_int_expression(t):
