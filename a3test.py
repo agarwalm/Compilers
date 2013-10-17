@@ -2,6 +2,8 @@
 #
 # Python lexer template.
 import sys
+import AstClasses as node
+import ply.yacc as yacc
 
 __author__ = "Ilya Yanok, Nate Nystrom"
 __version__ = "Version 1.0, 10 Oct 2013"
@@ -302,6 +304,64 @@ def t_main_comment(t):
 	'\#'
 	t.lexer.begin('comment')
 
+# Parser
+
+
+
+
+precedence = (
+			  ('nonassoc','print'),
+			  ('left','plus')
+			  )
+
+def p_module(p):
+	'module : statement_list'
+	p[0] = node.Module(p[1])
+
+def p_single_statement_list(p):
+	'statement_list : statement'
+	p[0] = [p[1]]
+
+def p_statement_list(p):
+	'statement_list : statement_list statement'
+	p[0] = p[1] + [p[2]]
+
+
+def p_simple_statement(p):
+	'statement : print expression'
+	p[0] = node.Printnl(p[2])
+
+#def p_assign_stmt(p):
+#	'statment : name assign expression'
+#	p[0]= Assign(Assname(p[1]), p[3])
+#
+def p_expression_statement(p):
+	'statement : expression'
+	p[0] = node.Discard(p[1])
+
+def p_plus_expression(t):
+	'expression : expression plus expression'
+	t[0] = node.Add(t[1], t[3])
+
+def p_int_expression(t):
+	'expression : integer'
+	t[0] = node.Const(t[1])
+def p_error(t):
+	print "Syntax error at '%s'" % t.value
+
+
+
+#while True:
+#	try:
+#		s = raw_input('calc > ')
+#	except EOFError:
+#		break
+#	if not s: continue
+#	result = yacc.parse(s)
+#	print result
+
+
+
 import ply.lex as lex
 
 if __name__ == '__main__':
@@ -313,55 +373,13 @@ if __name__ == '__main__':
 	lexer.token_ = lexer.token
 	lexer.token = (lambda: token_override(lexer))
 	lexer.begin('indent')
-	
-	lex.runmain(lexer)
-# Parser
+	yacc.yacc(debug=1)
+	file = sys.argv[1]
+	stream = open(file)
+	contents = stream.read()
+	print yacc.parse(contents, lexer)
 
-import AstClasses as node
-import ply.yacc as yacc
-
-
-precedence = (
-			  ('nonassoc','print'),
-			  ('left','plus')
-			  )
-
-def p_module(p):
-	'module: statement_list'
-	p[0] = Module(None, Stmt(p[1]))
-
-def p_simple_statement(p):
-	'statement: print expression'
-	p[0] = node.Printnl(p[2])
-
-def p_assign_stmt(p):
-	'statment name assign expression'
-	p[0]= Assign([Assname(p[1], OP_ASSIGN)], p[3])
-#
-#def p_plus_expression(t):
-#	'expression : expression plus expression'
-#	t[0] = node.Add(t[1], t[3])
-#	print
-
-def p_int_expression(t):
-	'expression : integer'
-	t[0] = node.Const(t[1])
-def p_error(t):
-	print "Syntax error at '%s'" % t.value
-
-yacc.yacc(debug=TRUE)
-
-while True:
-	try:
-		s = raw_input('calc > ')
-	except EOFError:
-		break
-	if not s: continue
-	result = yacc.parse(s)
-	print result
-
-
-
+print lex.runmain(lexer)
 
 
 
