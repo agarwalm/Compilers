@@ -18,7 +18,7 @@ states = (
 tokens = [
 		  'indent', 'dedent', 'identifier', 'newline',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt'
 		  ]
 
 t_indent_ignore = ''
@@ -215,6 +215,10 @@ def t_main_plus(t):
 	r'\+'
 	return t
 
+def t_main_power(t):
+	r'\*\*'
+	return t
+
 def t_main_minus(t):
 	r'\-'
 	return t
@@ -259,9 +263,7 @@ def t_main_rshift(t):
 	r'\>\>'
 	return t
 
-def t_main_power(t):
-	r'\*\*'
-	return t
+
 
 def t_main_modulo(t):
 	r'\%'
@@ -279,13 +281,15 @@ def t_main_equals(t):
 	r'\='
 	return t
 
-def t_main_div(t):
-	r'\\'
+def t_main_floordiv(t):
+	r'\/\/'
 	return t
 
-def t_main_floordiv(t):
-	r'\\\\'
+def t_main_div(t):
+	r'\/'
 	return t
+
+
 
 def t_main_incassign(t):
 	r'\+\='
@@ -310,8 +314,11 @@ def t_main_comment(t):
 
 
 precedence = (
-			  ('nonassoc','print'),
-			  ('left','plus')
+			  ('nonassoc','print', 'lt', 'gt'),
+			  ('left','plus','minus'),
+			  ('left', 'times', 'div'),
+			  ('right', 'power'),
+			  ('right', 'usub')
 			  )
 
 def p_module(p):
@@ -323,29 +330,86 @@ def p_single_statement_list(p):
 	p[0] = [p[1]]
 
 def p_statement_list(p):
-	'statement_list : statement_list statement'
-	p[0] = p[1] + [p[2]]
+	'statement_list : statement_list newline statement'
+	p[0] = p[1] + [p[3]]
 
 
 def p_simple_statement(p):
 	'statement : print expression'
 	p[0] = node.Printnl(p[2])
 
-#def p_assign_stmt(p):
-#	'statment : name assign expression'
-#	p[0]= Assign(Assname(p[1]), p[3])
-#
+def p_assign_stmt(p):
+	'statement : assname equals expression'
+	p[0]= node.Assign(p[1], p[3])
+
 def p_expression_statement(p):
 	'statement : expression'
 	p[0] = node.Discard(p[1])
 
-def p_plus_expression(t):
-	'expression : expression plus expression'
-	t[0] = node.Add(t[1], t[3])
+tokens = [
+		  'indent', 'dedent', 'identifier', 'newline',
+		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt'
+		  ]
 
+
+def p_binary_operators(p):
+	'''expression : expression plus expression
+				| expression minus expression
+				| expression times expression
+				| expression div expression
+				| expression power expression
+				| expression modulo expression
+				| expression lshift expression
+				| expression rshift expression
+				| expression floordiv expression
+				| expression and expression'''
+	if p[2] == '+':
+		p[0] = node.Add(p[1], p[3])
+	elif p[2] == '-':
+		p[0] = node.Sub(p[1], p[3])
+	elif p[2] == '*':
+		p[0] = node.Mul(p[1], p[3])
+	elif p[2] == '/':
+		p[0] = node.Div(p[1], p[3])
+	elif p[2] == '**':
+		p[0] = node.Power(p[1], p[3])
+	elif p[2] == '%':
+		p[0] = node.Mod(p[1], p[3])
+	elif p[2] == '//':
+		p[0] = node.FloorDiv(p[1], p[3])
+	elif p[2] == '>>':
+		p[0] = node.RightShift(p[1], p[3])
+	elif p[2] == '<<':
+		p[0] = node.LeftShift(p[1], p[3])
+	elif p[2] == '&':
+		p[0] = node.Bitand(p[1],p[3])
+
+#def p_single_bitwise_explist(p):
+#	'exp_list : expression'
+#	p[0] = [p[1]]
+#
+#def p_bitwise_explist(p):
+#	'exp_list : exp_list expression'
+#	p[0] = p[1] + p[2]
+	
+		
 def p_int_expression(t):
 	'expression : integer'
 	t[0] = node.Const(t[1])
+
+def p_exp_name(t):
+	'expression : name'
+	t[0] = t[1]
+
+def p_assname(t):
+	'assname : identifier'
+	t[0] = node.AssName(t[1])
+
+def p_name(t):
+	'name : identifier'
+	t[0] = node.Name(t[1])
+
 def p_error(t):
 	print "Syntax error at '%s'" % t.value
 
@@ -379,7 +443,7 @@ if __name__ == '__main__':
 	contents = stream.read()
 	print yacc.parse(contents, lexer)
 
-print lex.runmain(lexer)
+#lex.runmain(lexer)
 
 
 
