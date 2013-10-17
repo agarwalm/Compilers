@@ -1,3 +1,11 @@
+class Module:
+	def __init__(self, nodes):
+		self.nodes = nodes
+	def __repr__(self):
+		return "Module()"
+	def __str__(self):
+		return "Module(%s)" % (self.nodes)
+
 
 class Add:
 	def __init__(self,l,r):
@@ -8,13 +16,22 @@ class Add:
 	def __str__(self):
 		return "Add(%s, %s)" % (self.left,self.right)
 
-class AsName:
+class AssName:
 	def __init__(self,name):
 		self.name=name
 	def __repr__(self):
-		return "AsName()"
+		return "AssName(%s)" % (self.name)
 	def __str__(self):
-		return "AsName(%s)" % (self.name)
+		return "AssName(%s)" % (self.name)
+
+class Assign:
+	def __init__(self, assname, exp):
+		self.name = assname
+		self.expr = exp
+	def __repr__(self):
+		return "Assign(%s, %s)" % (self.name, self.expr)
+	def __str__(self):
+		return "Assign(%s, %s)" % (self.name, self.expr)
 
 
 class AugAssign:
@@ -27,28 +44,31 @@ class AugAssign:
 		return "AugAssign(%s, %s)" % (self.node,self.op)
 
 class Bitand:
-	def __init__(self,nodes):
-		self.nodes=nodes
+	def __init__(self,l,r):
+		self.right=r
+		self.left=l
 	def __repr__(self):
 		return "Bitand()"
 	def __str__(self):
-		return "Bitand(%s)" % (self.nodes)
+		return "Bitand(%s, %s)" % (self.left,self.right)
 
 class Bitor:
-	def __init__(self,nodes):
-		self.nodes=nodes
+	def __init__(self,l,r):
+		self.right=r
+		self.left=l
 	def __repr__(self):
 		return "Bitor()"
 	def __str__(self):
-		return "Bitor(%s)" % (self.nodes)
+		return "Bitor(%s, %s)" % (self.left,self.right)
 
 class Bitxor:
-	def __init__(self,nodes):
-		self.nodes=nodes
+	def __init__(self,l,r):
+		self.right=r
+		self.left=l
 	def __repr__(self):
 		return "Bitxor()"
 	def __str__(self):
-		return "Bitxor(%s)" % (self.nodes)
+		return "Bitxor(%s, %s)" % (self.left,self.right)
 
 class CallFunc:
 	def __init__(self,node,args):
@@ -67,7 +87,7 @@ class Discard:
 	def __init__(self,expr):
 		self.expr=expr
 	def __repr__(self):
-		return "Discard()"
+		return "Discard(%s)"% (self.expr)
 	def __str__(self):
 		return "Discard(%s)" % (self.expr)
 
@@ -158,11 +178,11 @@ class Power:
 	def __str__(self):
 		return "Power(%s, %s)" % (self.left, self.right)
 
-class Print:
+class Printnl:
 	def __init__(self,nodes):
 		self.nodes=nodes
 	def __repr__(self):
-		return "Print()"
+		return "Print(%s)" % (self.nodes)
 	def __str__(self):
 		return "Print(%s)" % (self.nodes)
 
@@ -189,7 +209,7 @@ class Stmt:
 	def __init__(self,nodes):
 		self.nodes=nodes
 	def __repr__(self):
-		return "()"
+		return "Stmt()"
 	def __str__(self):
 		return "Stmt(%s)" % (self.nodes)
 
