@@ -353,7 +353,6 @@ precedence = (
 			  ('left','plus','minus'),
 			  ('left', 'times', 'div'),
 			  ('right', 'power'),
-			  ('right', 'usub')
 			  )
 
 def p_module(p):
@@ -380,6 +379,22 @@ def p_assign_stmt(p):
 def p_expression_statement(p):
 	'statement : expression'
 	p[0] = node.Discard(p[1])
+
+def p_unary_sub(p):
+	'expression : minus num'
+	p[0] = node.UnarySub(p[2])
+
+def p_unary_sub_expression(p):
+	'expression : minus oparen expression cparen'
+	p[0] = node.UnarySub(p[3])
+
+def p_unary_add(p):
+	'expression : plus num'
+	p[0] = node.UnaryAdd(p[2])
+
+def p_unary_add_expression(p):
+	'expression : plus oparen expression cparen'
+	p[0] = node.UnaryAdd(p[3])
 
 def p_assign_ops(p):
 	'''statement : name incassign expression
@@ -437,8 +452,14 @@ def p_binary_operators(p):
 		p[0] = node.Bitxor(p[1],p[3])
 	
 		
+
+
 def p_int_expression(t):
-	'expression : integer'
+	'expression : num'
+	t[0] = t[1]
+
+def p_const_rule(t):
+	'num : integer'
 	t[0] = node.Const(t[1])
 
 def p_exp_name(t):
