@@ -18,7 +18,7 @@ states = (
 tokens = [
 		  'indent', 'dedent', 'identifier', 'newline',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign'
 		  ]
 
 t_indent_ignore = ''
@@ -211,6 +211,51 @@ def t_main_integer(t):
 		t.value = 0
 	return t
 
+def t_main_incassign(t):
+	r'\+\='
+	return t
+
+def t_main_decassign(t):
+	r'\-\='
+	return t
+
+def t_main_powerassign(t):
+	r'\*\*\='
+	return t
+
+def t_main_divassign(t):
+	r'\/\='
+	return t
+
+def t_main_mulassign(t):
+	r'\*\='
+	return t
+
+def t_main_modassign(t):
+	r'\%\='
+	return t
+
+def t_main_lshiftassign(t):
+	r'\<\<\='
+	return t
+
+def t_main_rshiftassign(t):
+	r'\>\>\='
+	return t
+
+def t_main_andassign(t):
+	r'\&\='
+	return t
+
+def t_main_orassign(t):
+	r'\|\='
+	return t
+
+def t_main_xorassign(t):
+	r'\^\='
+	return t
+	
+
 def t_main_plus(t):
 	r'\+'
 	return t
@@ -287,16 +332,6 @@ def t_main_floordiv(t):
 
 def t_main_div(t):
 	r'\/'
-	return t
-
-
-
-def t_main_incassign(t):
-	r'\+\='
-	return t
-
-def t_main_decassign(t):
-	r'\-\='
 	return t
 
 
@@ -426,6 +461,7 @@ def p_error(t):
 
 
 import ply.lex as lex
+import compile as comp
 
 if __name__ == '__main__':
 	lexer = lex.lex()
@@ -440,7 +476,9 @@ if __name__ == '__main__':
 	file = sys.argv[1]
 	stream = open(file)
 	contents = stream.read()
-	print yacc.parse(contents, lexer)
+	ast = yacc.parse(contents, lexer)
+	print ast
+#comp.compile(ast)
 
 #lex.runmain(lexer)
 
