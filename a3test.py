@@ -383,7 +383,16 @@ def p_expression_statement(p):
 
 def p_assign_ops(p):
 	'''statement : name incassign expression
-				 | name ...'''
+				 | name decassign expression
+                                 | name divassign expression
+                                 | name mulassign expression
+                                 | name modassign expression
+                                 | name lshiftassign expression
+                                 | name rshiftassign expression
+                                 | name andassign expression
+                                 | name orassign expression
+                                 | name xorassign expression
+                                 | name powerassign expression '''
 	p[0] = node.AugAssign(p[1], p[2], p[3])
 
 
