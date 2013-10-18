@@ -35,13 +35,14 @@ class Assign:
 
 
 class AugAssign:
-	def __init__(self,node,op):
-		self.node=node
+	def __init__(self,name,op, exp):
+		self.name=name
 		self.op=op
+		self.exp = exp
 	def __repr__(self):
-		return "AugAssign"
+		return "AugAssign(%s, %s, %s)" % (self.name,self.op,self.exp)
 	def __str__(self):
-		return "AugAssign(%s, %s)" % (self.node,self.op)
+		return "AugAssign(%s, %s, %s)" % (self.name,self.op,self.exp)
 
 class Bitand:
 	def __init__(self,l,r):

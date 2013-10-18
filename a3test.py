@@ -381,11 +381,11 @@ def p_expression_statement(p):
 	'statement : expression'
 	p[0] = node.Discard(p[1])
 
-tokens = [
-		  'indent', 'dedent', 'identifier', 'newline',
-		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt'
-		  ]
+def p_assign_ops(p):
+	'''statement : name incassign expression
+				 | name ...'''
+	p[0] = node.AugAssign(p[1], p[2], p[3])
+
 
 
 def p_binary_operators(p):
@@ -461,7 +461,6 @@ def p_error(t):
 
 
 import ply.lex as lex
-import compile as comp
 
 if __name__ == '__main__':
 	lexer = lex.lex()
