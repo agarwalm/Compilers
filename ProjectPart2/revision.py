@@ -163,9 +163,10 @@ def flattenExp(n, x):
 		flatStmts.append(temp)
 		return x
 
-	if isinstance(n,UnarySub) or isinstance(n, UnaryAdd):
+	if isinstance(n,UnarySub) or isinstance(n, UnaryAdd) or isinstance(n, Invert):
+		a = genSym()
 		#tempExpr will take the value of the name assigned to it
-		tempExpr = flattenExp(n.expr, x)
+		tempExpr = flattenExp(n.expr, a)
 		#change the expression of the unary sub to the variable you assigned
 		#to its expression when you flattened it
 		n.expr = Name(tempExpr)
@@ -174,6 +175,9 @@ def flattenExp(n, x):
 		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
 		flatStmts.append(temp)
 		return x
+			
+	
+
 
 	if isinstance(n, Bitand) or isinstance(n,Bitor) or isinstance(n, Bitxor):
 		var = dict()
@@ -304,6 +308,7 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, Const):
 		return str(ast.value)
+
 	
 	elif isinstance(ast, Add):
 		return codegen_binop(ast,x, "add")
@@ -355,6 +360,9 @@ def astToLLVM(ast, x):
 	elif isinstance(ast, UnarySub):
 		return codegen_unary(ast,x,"ua")
 
+	elif isinstance(ast, Invert):
+		return codegen_invert(ast,x)
+	
 	elif isinstance(ast, AugAssign):
 		return codegen_augassign(ast,ast.node.name,ast.op)
 
@@ -413,6 +421,15 @@ def codegen_unary(ast,x, op):
 	else:
 		output_operation(c,"0",a,"add")
 	output_store(c,x)
+
+def codegen_invert(ast, x):
+	a = genSym()
+	output_load(a, astToLLVM(ast.expr, x))
+	c = genSym()
+	output_operation(c , a , "1" , "add")
+	d = genSym()
+	output_operation(d, "0", c , "sub" )
+	output_store(d, x)
 
 def codegen_floordiv(ast,x):
 	a = genSym()
