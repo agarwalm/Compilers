@@ -15,6 +15,7 @@ import operator
 varName = 4
 #the list of flattened statement nodes
 flatStmts = [];
+variables = [];
 
 #gets creates an ast from the contenst of a file name given as an argument
 #generates LLVM code from the contents of the file
@@ -32,6 +33,8 @@ def compile():
 	#flatten the ast
 	#(fill the flatStmts tree with assignment statements)
 	flatten(ast)
+	#print variables
+	#print flatStmts
 
 	
 	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
@@ -101,7 +104,9 @@ def flattenStmt(n):
 			flatStmts.append(temp)
 			
 		else:
-			flattenExp(n.expr, genSymFromVar(n.nodes[0].name))
+			x = genSymFromVar(n.nodes[0].name)
+			variables.append(x)
+			flattenExp(n.expr, x)
 		
 	#if you have a discard, then generate a variable to assign
 	#to the expression
@@ -125,6 +130,7 @@ def flattenStmt(n):
 		t1 = Name(flattened_expr)
 		n.expr = t1
 		n.node = Name(genSymFromVar(n.node.name))
+		varialbes.append(n.node.name)
 		temp = Assign([AssName(n.node.name, 'OP_ASSIGN')],n)
 		flatStmts.append(temp)
 
@@ -136,6 +142,8 @@ def flattenStmt(n):
 
 
 def flattenExp(n, x):
+	
+	
 	#assign a constant to the given variable and append to list
 	if isinstance(n,Const):
 		if not isinstance(n.value, int):
@@ -145,7 +153,10 @@ def flattenExp(n, x):
 		return x
 	#if we have a name, return a variable of the form %v
 	if isinstance(n,Name):
-		return genSymFromVar(n.name)
+		a = genSymFromVar(n.name)
+		if a not in variables:
+			sys.exit('ERROR! Use of undefined variable!')
+		return a
 	
 
 	if isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
@@ -357,7 +368,7 @@ def astToLLVM(ast, x):
 	elif isinstance(ast, UnarySub):
 		return codegen_unary(ast,x,"us")
 
-	elif isinstance(ast, UnarySub):
+	elif isinstance(ast, UnaryAdd):
 		return codegen_unary(ast,x,"ua")
 
 	elif isinstance(ast, Invert):
