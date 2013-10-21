@@ -327,7 +327,6 @@ def p_module(p):
 
 def p_stmt(p):
 	'stmt : statement_list'
-	p[0]=node.Stmt([p[1]])
 	p[0]=node.Stmt(p[1])
 
 def p_single_statement_list(p):
@@ -341,7 +340,6 @@ def p_statement_list(p):
 
 def p_simple_statement(p):
 	'statement : print expression'
-	p[0] = node.Printnl(p[2])
 	p[0] = node.Printnl([p[2]])
 
 def p_assign_stmt(p):
