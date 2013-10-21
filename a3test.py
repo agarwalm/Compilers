@@ -18,7 +18,7 @@ states = (
 tokens = [
 		  'indent', 'dedent', 'identifier', 'newline',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input'
 		  ]
 
 t_indent_ignore = ''
@@ -314,6 +314,10 @@ def t_main_modulo(t):
 	r'\%'
 	return t
 
+def t_main_input(t):
+	r'input'
+	return t
+
 #def t_main_usub(t):
 #	r'\'
 #	return t
@@ -371,6 +375,11 @@ def p_statement_list(p):
 def p_simple_statement(p):
 	'statement : print expression'
 	p[0] = node.Printnl(p[2])
+
+def p_input_exp(p):
+	'expression : input oparen cparen'
+	p[0] = node.CallFunc(p[1])
+
 
 def p_assign_stmt(p):
 	'statement : assname equals expression'
@@ -509,7 +518,7 @@ if __name__ == '__main__':
 	print ast
 #comp.compile(ast)
 
-#lex.runmain(lexer)
+#print lex.runmain(lexer)
 
 
 
