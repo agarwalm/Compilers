@@ -16,9 +16,9 @@ states = (
 		  )
 
 tokens = [
-		  'indent', 'dedent', 'identifier', 'newline',
+		  'indent', 'dedent', 'identifier', 'newline', 'comment',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma'
 		  ]
 
 t_indent_ignore = ''
@@ -196,6 +196,11 @@ t_main_ignore = ' \t'
 
 tokens += []
 
+def t_main_input(t):
+	r'input'
+	
+	return t
+
 def t_main_identifier(t):
 	r'[a-zA-Z_][a-zA-Z_0-9]*'
 	#check in the dictionary
@@ -210,6 +215,55 @@ def t_main_integer(t):
 		print "integer value too large", t.value
 		t.value = 0
 	return t
+
+def t_main_incassign(t):
+	r'\+\='
+	return t
+
+def t_comma(t):
+	r'\,'
+	return t
+
+def t_main_decassign(t):
+	r'\-\='
+	return t
+
+def t_main_powerassign(t):
+	r'\*\*\='
+	return t
+
+def t_main_divassign(t):
+	r'\/\='
+	return t
+
+def t_main_mulassign(t):
+	r'\*\='
+	return t
+
+def t_main_modassign(t):
+	r'\%\='
+	return t
+
+def t_main_lshiftassign(t):
+	r'\<\<\='
+	return t
+
+def t_main_rshiftassign(t):
+	r'\>\>\='
+	return t
+
+def t_main_andassign(t):
+	r'\&\='
+	return t
+
+def t_main_orassign(t):
+	r'\|\='
+	return t
+
+def t_main_xorassign(t):
+	r'\^\='
+	return t
+
 
 def t_main_plus(t):
 	r'\+'
@@ -269,13 +323,6 @@ def t_main_modulo(t):
 	r'\%'
 	return t
 
-#def t_main_usub(t):
-#	r'\'
-#	return t
-#
-#def t_main_uadd(t):
-#	return t
-
 
 def t_main_equals(t):
 	r'\='
@@ -287,16 +334,6 @@ def t_main_floordiv(t):
 
 def t_main_div(t):
 	r'\/'
-	return t
-
-
-
-def t_main_incassign(t):
-	r'\+\='
-	return t
-
-def t_main_decassign(t):
-	r'\-\='
 	return t
 
 
@@ -342,6 +379,28 @@ def p_simple_statement(p):
 	'statement : print expression'
 	p[0] = node.Printnl([p[2]])
 
+def p_name_print(p):
+	'statement : print name'
+	p[0] = node.Printnl([p[2]])
+
+def p_input_exp(p):
+	'expression : input oparen parameters cparen'
+	p[0] = node.CallFunc(node.Name(p[1]),p[3])
+
+def p_single_param(p):
+	'parameters : expression'
+	p[0] = [p[1]]
+
+def p_params(p):
+	'parameters : parameters comma expression '
+	p[0] = p[1] + [p[1]]
+
+def p_empty_params(p):
+	'parameters : '
+	p[0] = []
+
+
+
 def p_assign_stmt(p):
 	'statement : assname equals expression'
 	p[0]= node.Assign(p[1], p[3])
@@ -350,11 +409,48 @@ def p_expression_statement(p):
 	'statement : expression'
 	p[0] = node.Discard(p[1])
 
-tokens = [
-		  'indent', 'dedent', 'identifier', 'newline',
-		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt'
-		  ]
+def p_assign_stmt(p):
+	'statement : assname equals expression'
+	p[0]= node.Assign(p[1], p[3])
+
+
+def p_unary_sub(p):
+	'expression : minus num'
+	p[0] = node.UnarySub(p[2])
+
+def p_unary_sub_expression(p):
+	'expression : minus oparen expression cparen'
+	p[0] = node.UnarySub(p[3])
+
+def p_unary_add(p):
+	'expression : plus num'
+	p[0] = node.UnaryAdd(p[2])
+
+def p_unary_add_expression(p):
+	'expression : plus oparen expression cparen'
+	p[0] = node.UnaryAdd(p[3])
+
+def p_invert(p):
+	'expression : invert num'
+	p[0] = node.Invert(p[2])
+
+def p_invert_expression(p):
+	'expression : invert oparen expression cparen'
+	p[0] = node.Invert(p[3])
+
+def p_assign_ops(p):
+	'''statement : name incassign expression
+		| name decassign expression
+		| name divassign expression
+		| name mulassign expression
+		| name modassign expression
+		| name lshiftassign expression
+		| name rshiftassign expression
+		| name andassign expression
+		| name orassign expression
+		| name xorassign expression
+		| name powerassign expression '''
+	p[0] = node.AugAssign(p[1], p[2], p[3])
 
 
 def p_binary_operators(p):
@@ -398,7 +494,11 @@ def p_binary_operators(p):
 	
 		
 def p_int_expression(t):
-	'expression : integer'
+	'expression : num'
+	t[0] = t[1]
+
+def p_const_rule(t):
+	'num : integer'
 	t[0] = node.Const(t[1])
 
 def p_exp_name(t):
@@ -414,37 +514,12 @@ def p_name(t):
 	t[0] = node.Name(t[1])
 
 def p_error(t):
-	print "Syntax error at '%s'" % t.value
-
-
-
-#while True:
-#	try:
-#		s = raw_input('calc > ')
-#	except EOFError:
-#		break
-#	if not s: continue
-#	result = yacc.parse(s)
-#	print result
+	print "Syntax error"
 
 
 
 import ply.lex as lex
 
-# if __name__ == '__main__':
-# 	lexer = lex.lex()
-# 	lexer.indents = []
-# 	lexer.indents.append(0)
-# 	lexer.paren_stack = []
-# 	lexer.curr_indent = 0
-# 	lexer.token_ = lexer.token
-# 	lexer.token = (lambda: token_override(lexer))
-# 	lexer.begin('indent')
-# 	yacc.yacc(debug=1)
-# 	file = sys.argv[1]
-# 	stream = open(file)
-# 	contents = stream.read()
-# 	return yacc.parse(contents, lexer)
 
 def getAST():
 	lexer = lex.lex()
@@ -465,7 +540,8 @@ def getAST():
 getAST()
 
 
-#lex.runmain(lexer)
+
+
 
 
 

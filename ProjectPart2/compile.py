@@ -5,6 +5,8 @@ import operator
 import os
 import a3test
 from AstClasses import *
+import compiler
+
 
 
 
@@ -16,6 +18,7 @@ from AstClasses import *
 varName = 4
 #the list of flattened statement nodes
 flatStmts = [];
+variables = [];
 
 #gets creates an ast from the contenst of a file name given as an argument
 #generates LLVM code from the contents of the file
@@ -27,25 +30,34 @@ def compile():
 	filePath = sys.argv[1]
 	#abstract syntax tree for the contents of the file
 	ast=a3test.getAST()
-	#ast = compiler.parseFile(filePath)
+	#ast2 = compiler.parseFile(filePath)
+	#print ast2
+	
 	#print "original ast: ", ast, "\n ********"
 	#flatten the ast
 	#(fill the flatStmts tree with assignment statements)
 	
 	flatten(ast)
-	# print "///////////////////////////////////////"
-	# print ast
-	# print "///////////////////////////////////////"
+	
 	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
-	print 'define i32 @input() nounwind uwtable ssp {'
+	print 'define i32 @input() nounwind uwtable ssp { ' 
+	
+
+	#	print 'declare i32 @input() nounwind uwtable ssp '
+
+	
 	print '  %n = alloca i32, align 4'
 	print '  %1 = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %n)'
 	print '  %2 = load i32* %n, align 4'
 	print '  ret i32 %2'
 	print '}\n'
 	print 'declare i32 @scanf(i8*, ...)\n'
-	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp {'
+
+	
+	#	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
+	
+	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
 	print '  %1 = alloca i32, align 4'
 	print '  store i32 %x, i32* %1, align 4'
 	print '  %2 = load i32* %1, align 4'
@@ -53,6 +65,7 @@ def compile():
 	print '  ret i32 0'
 	print '}\n'
 	print 'declare i32 @printf(i8*, ...)'
+	
 	
 	#output first line needed for the .ll file
 	print "define i32 @main() nounwind uwtable ssp {"
@@ -99,11 +112,13 @@ def flattenStmt(n):
 			sys.exit('Tuple assignment not permitted')
 
 		if isinstance(n.expr, Name):
-
-			temp = Assign(AssName(genSymFromVar(n.name.name)),Name(flattenExp(n.expr,genSym())))
+			x = genSymFromVar(n.name.name)
+			temp = Assign(AssName(x),Name(flattenExp(n.expr,genSym())))
+			variables.append(x)
 			flatStmts.append(temp)
 			
 		else:
+			variables.append(n.name.name)
 			flattenExp(n.expr, genSymFromVar(n.name.name))
 		
 	#if you have a discard, then generate a variable to assign
@@ -117,18 +132,21 @@ def flattenStmt(n):
 		a = genSym()
 		b = genSym()
 		t1 = flattenExp(n.nodes[0], a)
-		n.nodes[0] =Name(t1)
+		n.nodes[0] = Name(t1)
 		temp = Assign(AssName(b), n)
 		flatStmts.append(temp)
 		return b
 	
 	elif isinstance(n, AugAssign):
 		a = genSym()
-		flattened_expr = flattenExp(n.expr, a)
-		t1 = Name(flattened_expr)
-		n.expr = t1
-		n.node = Name(genSymFromVar(n.node.name))
-		temp = Assign(AssName(n.node.name),n)
+		flattened_expr = flattenExp(n.exp, a)
+		#t1 = Name(flattened_expr)
+		n.exp = Name(a)
+		x = genSymFromVar(n.name.name)
+		if n.name.name not in variables:
+			sys.exit('ERROR! Use of undefined variable '+n.name.name)
+		n.name = Name(x)
+		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 
 
@@ -148,7 +166,10 @@ def flattenExp(n, x):
 		return x
 	#if we have a name, return a variable of the form %v
 	if isinstance(n,Name):
-		return genSymFromVar(n.name)
+		a = genSymFromVar(n.name)
+		if n.name not in variables:
+			sys.exit('ERROR! Use of undefined variable '+n.name)
+		return a
 	
 
 	if isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
@@ -174,7 +195,7 @@ def flattenExp(n, x):
 		n.expr = Name(tempExpr)
 		#now assign the modified UnarySub, n, to variable x
 		#and append it to the list
-		temp = Assign(AssName(x),n)
+		temp = Assign(AssName(genSymFromVar(x)),n)
 		flatStmts.append(temp)
 		return x
 
@@ -239,7 +260,7 @@ def flattenExp(n, x):
 		flattened_expr = flattenExp(n.expr, a)
 		t1 = Name(flattened_expr)
 		n.expr = t1
-		temp = Assign(AssName(n.expr),n)
+		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 
 
@@ -283,7 +304,7 @@ def alloc():
 	for element in flatStmts:
 		if element.name.name not in lst:
 			lst.append(element.name.name)
-	
+			
 	for element in lst:
 		print "	 "+element + " = alloca i32, align 4"
 
@@ -293,310 +314,241 @@ def astToLLVM(ast, x):
 	
 	
 	if isinstance(ast, Assign):
-		#if the assign statement has only one constant to the right of the equals sign, output a store instruction
+		#if the assign statement has only one constant or name to the right of the equals sign, output a store instruction
 		if isinstance(ast.expr, Const):
-			print "	 "+ "store i32 "+str(ast.expr.value)+", i32* " + ast.name.name+", align 4"
+			codegen_assign_const(ast)
+		
 		if isinstance(ast.expr, Name):
-			a = genSym()
-			obj = load(ast.expr.name, a)
-			print astToLLVM(obj, a)
-			print "  "+"store i32 "+a+", i32* " + ast.name.name+", align 4"
+			codegen_assign_name(ast)
+		
 		#otherwise it means there is a more complex expression to the right of the equals sign
 		#we need to go deeper
 		else:
 			astToLLVM(ast.expr, ast.name.name)
 	
 	elif isinstance(ast, Const):
-		o = constant(ast);
-		return o.toString
+		return str(ast.value)
+	
 	
 	elif isinstance(ast, Add):
-		return createOpObj(ast, x, "add")
+		return codegen_binop(ast,x, "add")
 	
 	elif isinstance(ast, Sub):
-		return createOpObj(ast,x,"sub")
+		return codegen_binop(ast,x,"sub")
 	
 	elif isinstance(ast, Mul):
-		return createOpObj(ast,x, "mul")
+		return codegen_binop(ast,x, "mul")
 	
 	elif isinstance(ast, Div):
-		return createOpObj(ast,x,"sdiv")
-
-
+		return codegen_binop(ast,x,"sdiv")
+	
+	
 	elif isinstance(ast, Mod):
-		return createOpObj(ast,x, "srem")
-
+		return codegen_binop(ast,x, "srem")
+	
 	elif isinstance(ast, LeftShift):
-		return createOpObj(ast,x,"shl")
-
+		return codegen_binop(ast,x,"shl")
+	
 	elif isinstance(ast, RightShift):
-		return createOpObj(ast,x, "ashr")
-
+		return codegen_binop(ast,x, "ashr")
+	
 	elif isinstance(ast, FloorDiv):
-		return createFloorObj(ast,x)
+		return codegen_floordiv(ast,x)
 	
 	elif isinstance(ast, Power):
-		return createPowObj(ast,x)
+		return codegen_power(ast,x)
 	
-
+	
 	elif isinstance(ast, Bitor):
-		return createBitOpObj(ast,x, "or")
-
+		return codegen_binop(ast,x, "or")
+	
 	elif isinstance(ast, Bitand):
-		return createBitOpObj(ast,x, "and")
-
+		return codegen_binop(ast,x, "and")
+	
 	elif isinstance(ast, Bitxor):
-		return createBitOpObj(ast,x, "xor")
+		return codegen_binop(ast,x, "xor")
 	
 	elif isinstance(ast, AssName):
 		return ast.name
 	
 	elif isinstance(ast, Name):
 		return ast.name
-
+	
 	elif isinstance(ast, UnarySub):
-		return createUnaryOpObj(ast,x,"us")
-
-	elif isinstance(ast, UnarySub):
-		return createUnaryOpObj(ast,x,"ua")
-
+		return codegen_unary(ast,x,"us")
+	
+	elif isinstance(ast, UnaryAdd):
+		return codegen_unary(ast,x,"ua")
+	
+	elif isinstance(ast, Invert):
+		return codegen_invert(ast,x)
+	
 	elif isinstance(ast, AugAssign):
-		return createAugObj(ast,ast.node.name,ast.op)
-
+		return codegen_augassign(ast,ast.name.name,ast.op)
+	
 	elif isinstance(ast, Printnl):
-		return createPrintObj(ast, x)
-
+		return codegen_print(ast, x)
+	
 	elif isinstance(ast, CallFunc):
-		return createCallFuncObj(ast, x)
-	
-	
-	elif isinstance(ast, load):
-		return ast.toString
+		return codegen_callfunc(ast, x)
 
-		
-	
-#creates an llvmOp object for a specified operator (add, sub, mul, div or power)
-#returns the generated code
-def createOpObj(ast, x, op):
-	#get the value of .left and .right (will either be a variable or a constant)
-	l = astToLLVM(ast.left,x)
-	r = astToLLVM(ast.right,x)
-	#creates the an llvmOp object with the propper operation
-	obj = llvmOp(l, r, op, x)
-	return obj.codegen()
 
-#creates an llvmOp object for a specified bitwise operator (and, or, xor)
-#the bit operators do not have a .left and .right, but because we flattened the
-#ast, each bitwise operator will only have two nodes .nodes[0] and .nodes[1]
-def createBitOpObj(ast,x,op):
-	l = astToLLVM(ast.nodes[0],x)
-	r = astToLLVM(ast.nodes[1],x)
-	obj = llvmOp(l, r, op, x)
-	return obj.codegen()
 
-#for UnarySub, just subtract the expression from 0
-def createUnaryOpObj(ast, x,op):
-	e = astToLLVM(ast.expr,x)
-	if(op == "us"):
-		obj = UnaryllvmOp(e,"sub",x)
-	else:
-		obj = UnaryllvmOp(e,"add",x)
 
-	return obj.codegen()
+#THE LLVM CODE GENERATION METHODS
 
-def createPrintObj(ast, x):
-	e = astToLLVM(ast.nodes[0], genSym())
-	obj = Printllvm(e,x)
-	return obj.codegen()
 
-def createCallFuncObj(ast,x):
+def codegen_assign_const(ast):
+	output_store(str(ast.expr.value),ast.name.name)
+
+def codegen_assign_name(ast):
 	a = genSym()
-	print "	 "+a+" = call i32 @"+ast.node.name+"()"
-	print "	 "+"store i32 "+a+", i32* "+x+", align 4"
+	output_load(a, ast.expr.name);
+	output_store(a, ast.name.name)
 
-def createFloorObj(ast,x):
-	l = astToLLVM(ast.left, x)
-	r = astToLLVM(ast.right,x)
-	obj = FloorllvmOp(l,r, x)
-	return obj.codegen()
-	
-def createPowObj(ast,x):
-	l = astToLLVM(ast.left, x)
-	r = astToLLVM(ast.right,x)
-	obj = PowllvmOp(l,r,x)
-	obj.codegen()	
-	
-	
-	
+def codegen_binop(ast,x, op):
+	#must create temporary variables for the load operations
+	a = genSym()
+	b = genSym()
+	output_load(a, astToLLVM(ast.left,x))
+	output_load(b, astToLLVM(ast.right,x))
+	c = genSym()
+	output_operation(c,a,b,op)
+	#stores contents of c in x
+	output_store(c,x)
 
-def createAugObj(ast, x, op):
-	e = astToLLVM(ast.expr, x)
+#TODO: our new bitwise operators will have a .left and a .right so we can combine codegen_binop
+#and codegen_bitwise into one function
+
+#def codegen_bitwise(ast,x, op):
+#	#must create temporary variables for the load operations
+#	a = genSym()
+#	b = genSym()
+#	output_load(a, astToLLVM(ast.nodes[0],x))
+#	output_load(b, astToLLVM(ast.nodes[1],x))
+#	#temporary variable to store the operation before it can be stored in x
+#	c = genSym()
+#	output_operation(c,a,b,op)
+#	#stores contents of c in x
+#	output_store(c,x)
+
+def codegen_unary(ast,x, op):
+	a = genSym()
+	output_load(a, astToLLVM(ast.expr,x))
+	c = genSym()
+	if(op == 'us'):
+		output_operation(c,"0",a,"sub")
+	else:
+		output_operation(c,"0",a,"add")
+	output_store(c,x)
+
+def codegen_invert(ast, x):
+	a = genSym()
+	output_load(a, astToLLVM(ast.expr, x))
+	c = genSym()
+	output_operation(c , a , "1" , "add")
+	d = genSym()
+	output_operation(d, "0", c , "sub" )
+	output_store(d, x)
+
+def codegen_floordiv(ast,x):
+	a = genSym()
+	b = genSym()
+	c = genSym()
+	output_load(a,astToLLVM(ast.left,x))
+	output_load(b,astToLLVM(ast.right,x))
+	output_operation(c,a,b,"sdiv")
+	f = genSym()
+	output_sitofp_todouble(f,c)
+	d = genSym()
+	e = genSym()
+	output_call(d, "double", "floor", "double "+f, "nounwind readnone" )
+	output_fptosi_double(e,d)
+	output_store(e, x)
+
+def codegen_power(ast,x):
+	a = genSym()
+	b = genSym()
+	c = genSym()
+	d = genSym()
+	e = genSym()
+	f = genSym()
+	output_load(a, astToLLVM(ast.left,x))
+	output_sitofp_todouble(c,a)
+	output_load(b, astToLLVM(ast.right,x))
+	output_sitofp_todouble(d,b)
+	output_call(e,"double","llvm.pow.f64","double "+c+","+" double "+d,"")
+	output_fptosi_double(f,e)
+	output_store(f,x)
+
+def codegen_print(ast,x):
+	e = astToLLVM(ast.nodes[0], x)
+	a = genSym()
+	b = genSym()
+	output_load(a,e)
+	output_call(b,"i32","print_int_nl","i32"+a,"")
+
+
+def  codegen_augassign(ast, x, op):
+	
+	e = astToLLVM(ast.exp, x)
+	llvmop = None
 	if(op == "+="):
-		obj = AugllvmOp(e, "add", x)
+		llvmop = "add"
 	elif(op == "-="):
-		obj = AugllvmOp(e,"sub",x)
+		llvmop = "sub"
 	elif(op == "/="):
-		obj = AugllvmOp(e,"sdiv", x)
-	elif(op == "*="):	
-		obj = AugllvmOp(e,"mul", x)
+		llvmop = "sdiv"
+	elif(op == "*="):
+		llvmop = "mul"
 	elif(op == "%="):
-		obj = AugllvmOp(e,"srem", x)
+		llvmop = "srem"
 	elif (op == "<<="):
-		obj = AugllvmOp(e,"shl",x)
+		llvmop = "shl"
 	elif (op == ">>="):
-		obj = AugllvmOp(e,"ashr",x)
+		llvmop = "ashr"
 	elif (op == "&="):
-		obj = AugllvmOp(e, "and", x)
+		llvmop = "and"
 	elif (op == "|="):
-		obj = AugllvmOp(e,"or",x)
+		llvmop = "or"
 	elif (op == "^="):
-		obj = AugllvmOp(e,"xor",x)
+		llvmop = "xor"
 	elif (op == "**="):
-		obj = AugllvmOp(e,"pow",x)
+		llvmop = "pow"
+	a = genSym()
+	b = genSym()
+	output_load(a, e)
+	output_load(b,x)
+	c = genSym()
+	output_operation(c,b,a,llvmop)
+	output_store(c,x)
 
-	return obj.codegen()
+def codegen_callfunc(ast,x):
+	a = genSym()
+	output_call(a,"i32",ast.node.name,"","")
+	output_store(a,x)
 
 
-#class for operators (add, sub, mul, div or power)
-class llvmOp:
-	def __init__(self, l, r, op, x):
-		self.left = l
-		self.right = r
-		self.operation = op
-		self.assignTo = x
-	#generates certain lines of llvm code that needs to be printed for a given operation
-	def codegen(self):
-		#must create temporary variables for the load operations
-		a = genSym()
-		b = genSym()
-		obj1 = load(self.left, a)
-		obj2 = load(self.right, b)
-		#temporary variable to store the operation before it can be stored in x
-		c = genSym()
-		#create assignments for the temporary variables
-#		temp1 = Assign([AssName(a, 'OP_ASSIGN')], obj1)
-#		temp2 = Assign([AssName(b, 'OP_ASSIGN')], obj2)
-		#prints the store statements
-		print astToLLVM(obj1, a)
-		print astToLLVM(obj2, b)
-		#stores the operation result in temp var c
-		print "	 "+c+" = "+self.operation+" i32 "+a+", "+b
-		#stores contents of c in x
-		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
+def output_load(tempvar, val):
+	print "	 "+tempvar+" = load i32* "+ val+", align 4"
 
-#class for operators (UnaryAdd and UnarySub)
-class UnaryllvmOp:
-	def __init__(self,n,op,x):
-		self.operation = op
-		self.exp = n
-		self.assignTo = x
-	def codegen(self):
-		a = genSym()
-		obj = load(self.exp,a)
-		c = genSym()
-		temp = Assign(AssName(a),obj)
-		print astToLLVM(obj, a)
-		print "	 "+c+" = "+self.operation+" i32 0, "+a
-		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
+def output_store(val, var):
+	print "  "+"store i32 "+val+", i32* " + var+", align 4"
 
-class AugllvmOp:
-	def __init__(self, n, op, x):
-		self.operation = op
-		self.exp = n
-		self.assignTo = x
-	def codegen(self):
-		a = genSym()
-		b = genSym()
-		obj = load(self.exp,a)
-		obj2 = load(self.assignTo,b)
-		c = genSym()
-		temp = Assign(AssName(a),obj)
-		temp2 = Assign(AssName(b),obj2)
-		print astToLLVM(obj, a)
-		print astToLLVM(obj2,b)
-		print "	 "+c+" = "+self.operation+" i32 "+b+", "+a
-		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
+def output_operation(a,b,c, op):
+	print "	 "+a+" = "+op+" i32 "+b+", "+c
 
-class Printllvm:
-	def __init__(self, n, x):
-		self.assignTo = x
-		self.exp = n
-	def codegen(self):
-		a = genSym()
-		b = genSym()
-		obj = load(self.exp,a)
-		temp = Assign(AssName(a),obj)
-		print astToLLVM(obj,a)
-		print "	 "+b+" = call i32 @print_int_nl(i32 "+a+") "
-		
-class PowllvmOp:
-	def __init__(self,l,r,x):
-		self.left = l
-		self.right = r
-		self.assignTo = x
-	def codegen(self):
-		a = genSym()
-		b = genSym()
-		c = genSym()
-		d = genSym()
-		e = genSym()
-		f = genSym()
-		obj1 = load(self.left, a)
-		print astToLLVM(obj1,a)
-		print "	 "+c+" = sitofp i32 "+a+" to double"
-		obj2 = load(self.right, b)
-		print astToLLVM(obj2, b)
-		print "	 "+d+" = sitofp i32 "+b+" to double"
-		print "	 "+e+" = call double @llvm.pow.f64(double "+c+","+" double "+d+")"
-		print "	 "+f+" = fptosi double "+e+" to i32"
-		print "	 "+"store i32 "+f+", i32* "+self.assignTo+", align 4"
+def output_sitofp_todouble(a,b):
+	print "	 "+a+" = sitofp i32 "+b+" to double"
+
+def output_fptosi_double(a,b):
+	print "	 "+a+" = fptosi double "+b+" to i32"
+
+def output_call(a,ret,func,param,nounwind):
+	print "	 "+a+" = call "+ret+" @"+func+"("+param+") "+nounwind
 
 
 
-class FloorllvmOp:
-	def __init__(self,l,r,x):
-		self.left = l
-		self.right = r
-		self.assignTo = x
-	def codegen(self):
-		a = genSym()
-		b = genSym()
-		obj1 = load(self.left, a)
-		obj2 = load(self.right, b)
-		#temporary variable to store the operation before it can be stored in x
-		c = genSym()
-		#prints the store statements
-		print astToLLVM(obj1, a)
-		print astToLLVM(obj2, b)
-		print "	 "+c+" = sdiv i32 "+a+", "+b
-		f = genSym()
-		print "	 "+f+" = sitofp i32 "+c+" to double"
-		d = genSym()
-		e = genSym()
-		print "	 "+d+" = call double @floor(double "+f+") nounwind readnone"
-		print "	 "+e+" = fptosi double "+d+" to i32"
-		print "	 "+"store i32 "+e+", i32* "+self.assignTo+", align 4"
-		
-	
-		
-		
-#class for constants
-class constant:
-	def __init__(self, c):
-		self.val = c.value;
-		self.toString = str(self.val)
-
-
-
-#a load class to make printing the load instruction easier
-#tentative TODO: maybe make a class for store instructions as well?
-#just for the sake of consistency. or not. whatever.
-class load:
-	def __init__(self, var,a):
-		self.toString = "	 "+a+" = load i32* "+ var+", align 4"
-
-
-	
 
 #calls compile to start the program
 compile()
@@ -607,5 +559,5 @@ compile()
 
 
 
-		
+
 
