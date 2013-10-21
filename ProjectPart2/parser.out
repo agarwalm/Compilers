@@ -1,0 +1,1455 @@
+Created by PLY version 3.4 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    gt
+    obracket
+    invert
+    cparen
+    incassign
+    lt
+    usub
+    oparen
+    uadd
+    ocurly
+    dedent
+    string
+    lparen
+    rparen
+    decassign
+    ccurly
+    indent
+    cbracket
+
+Grammar
+
+Rule 0     S' -> module
+Rule 1     module -> stmt
+Rule 2     stmt -> statement_list
+Rule 3     statement_list -> statement
+Rule 4     statement_list -> statement_list newline statement
+Rule 5     statement -> print expression
+Rule 6     statement -> assname equals expression
+Rule 7     statement -> expression
+Rule 8     expression -> expression plus expression
+Rule 9     expression -> expression minus expression
+Rule 10    expression -> expression times expression
+Rule 11    expression -> expression div expression
+Rule 12    expression -> expression power expression
+Rule 13    expression -> expression modulo expression
+Rule 14    expression -> expression lshift expression
+Rule 15    expression -> expression rshift expression
+Rule 16    expression -> expression floordiv expression
+Rule 17    expression -> expression and expression
+Rule 18    expression -> expression or expression
+Rule 19    expression -> expression xor expression
+Rule 20    expression -> integer
+Rule 21    expression -> name
+Rule 22    assname -> identifier
+Rule 23    name -> identifier
+
+Terminals, with rules where they appear
+
+and                  : 17
+cbracket             : 
+ccurly               : 
+cparen               : 
+decassign            : 
+dedent               : 
+div                  : 11
+equals               : 6
+error                : 
+floordiv             : 16
+gt                   : 
+identifier           : 22 23
+incassign            : 
+indent               : 
+integer              : 20
+invert               : 
+lparen               : 
+lshift               : 14
+lt                   : 
+minus                : 9
+modulo               : 13
+newline              : 4
+obracket             : 
+ocurly               : 
+oparen               : 
+or                   : 18
+plus                 : 8
+power                : 12
+print                : 5
+rparen               : 
+rshift               : 15
+string               : 
+times                : 10
+uadd                 : 
+usub                 : 
+xor                  : 19
+
+Nonterminals, with rules where they appear
+
+assname              : 6
+expression           : 5 6 7 8 8 9 9 10 10 11 11 12 12 13 13 14 14 15 15 16 16 17 17 18 18 19 19
+module               : 0
+name                 : 21
+statement            : 3 4
+statement_list       : 2 4
+stmt                 : 1
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . module
+    (1) module -> . stmt
+    (2) stmt -> . statement_list
+    (3) statement_list -> . statement
+    (4) statement_list -> . statement_list newline statement
+    (5) statement -> . print expression
+    (6) statement -> . assname equals expression
+    (7) statement -> . expression
+    (22) assname -> . identifier
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    print           shift and go to state 3
+    identifier      shift and go to state 9
+    integer         shift and go to state 6
+
+    name                           shift and go to state 7
+    stmt                           shift and go to state 4
+    assname                        shift and go to state 5
+    module                         shift and go to state 1
+    statement                      shift and go to state 2
+    statement_list                 shift and go to state 8
+    expression                     shift and go to state 10
+
+state 1
+
+    (0) S' -> module .
+
+
+
+state 2
+
+    (3) statement_list -> statement .
+
+    newline         reduce using rule 3 (statement_list -> statement .)
+    $end            reduce using rule 3 (statement_list -> statement .)
+
+
+state 3
+
+    (5) statement -> print . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 12
+    name                           shift and go to state 7
+
+state 4
+
+    (1) module -> stmt .
+
+    $end            reduce using rule 1 (module -> stmt .)
+
+
+state 5
+
+    (6) statement -> assname . equals expression
+
+    equals          shift and go to state 13
+
+
+state 6
+
+    (20) expression -> integer .
+
+    plus            reduce using rule 20 (expression -> integer .)
+    minus           reduce using rule 20 (expression -> integer .)
+    times           reduce using rule 20 (expression -> integer .)
+    div             reduce using rule 20 (expression -> integer .)
+    power           reduce using rule 20 (expression -> integer .)
+    modulo          reduce using rule 20 (expression -> integer .)
+    lshift          reduce using rule 20 (expression -> integer .)
+    rshift          reduce using rule 20 (expression -> integer .)
+    floordiv        reduce using rule 20 (expression -> integer .)
+    and             reduce using rule 20 (expression -> integer .)
+    or              reduce using rule 20 (expression -> integer .)
+    xor             reduce using rule 20 (expression -> integer .)
+    newline         reduce using rule 20 (expression -> integer .)
+    $end            reduce using rule 20 (expression -> integer .)
+
+
+state 7
+
+    (21) expression -> name .
+
+    plus            reduce using rule 21 (expression -> name .)
+    minus           reduce using rule 21 (expression -> name .)
+    times           reduce using rule 21 (expression -> name .)
+    div             reduce using rule 21 (expression -> name .)
+    power           reduce using rule 21 (expression -> name .)
+    modulo          reduce using rule 21 (expression -> name .)
+    lshift          reduce using rule 21 (expression -> name .)
+    rshift          reduce using rule 21 (expression -> name .)
+    floordiv        reduce using rule 21 (expression -> name .)
+    and             reduce using rule 21 (expression -> name .)
+    or              reduce using rule 21 (expression -> name .)
+    xor             reduce using rule 21 (expression -> name .)
+    newline         reduce using rule 21 (expression -> name .)
+    $end            reduce using rule 21 (expression -> name .)
+
+
+state 8
+
+    (2) stmt -> statement_list .
+    (4) statement_list -> statement_list . newline statement
+
+    $end            reduce using rule 2 (stmt -> statement_list .)
+    newline         shift and go to state 14
+
+
+state 9
+
+    (22) assname -> identifier .
+    (23) name -> identifier .
+
+    equals          reduce using rule 22 (assname -> identifier .)
+    plus            reduce using rule 23 (name -> identifier .)
+    minus           reduce using rule 23 (name -> identifier .)
+    times           reduce using rule 23 (name -> identifier .)
+    div             reduce using rule 23 (name -> identifier .)
+    power           reduce using rule 23 (name -> identifier .)
+    modulo          reduce using rule 23 (name -> identifier .)
+    lshift          reduce using rule 23 (name -> identifier .)
+    rshift          reduce using rule 23 (name -> identifier .)
+    floordiv        reduce using rule 23 (name -> identifier .)
+    and             reduce using rule 23 (name -> identifier .)
+    or              reduce using rule 23 (name -> identifier .)
+    xor             reduce using rule 23 (name -> identifier .)
+    newline         reduce using rule 23 (name -> identifier .)
+    $end            reduce using rule 23 (name -> identifier .)
+
+
+state 10
+
+    (7) statement -> expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    newline         reduce using rule 7 (statement -> expression .)
+    $end            reduce using rule 7 (statement -> expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+
+state 11
+
+    (23) name -> identifier .
+
+    plus            reduce using rule 23 (name -> identifier .)
+    minus           reduce using rule 23 (name -> identifier .)
+    times           reduce using rule 23 (name -> identifier .)
+    div             reduce using rule 23 (name -> identifier .)
+    power           reduce using rule 23 (name -> identifier .)
+    modulo          reduce using rule 23 (name -> identifier .)
+    lshift          reduce using rule 23 (name -> identifier .)
+    rshift          reduce using rule 23 (name -> identifier .)
+    floordiv        reduce using rule 23 (name -> identifier .)
+    and             reduce using rule 23 (name -> identifier .)
+    or              reduce using rule 23 (name -> identifier .)
+    xor             reduce using rule 23 (name -> identifier .)
+    newline         reduce using rule 23 (name -> identifier .)
+    $end            reduce using rule 23 (name -> identifier .)
+
+
+state 12
+
+    (5) statement -> print expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    newline         reduce using rule 5 (statement -> print expression .)
+    $end            reduce using rule 5 (statement -> print expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+
+state 13
+
+    (6) statement -> assname equals . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 27
+    name                           shift and go to state 7
+
+state 14
+
+    (4) statement_list -> statement_list newline . statement
+    (5) statement -> . print expression
+    (6) statement -> . assname equals expression
+    (7) statement -> . expression
+    (22) assname -> . identifier
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    print           shift and go to state 3
+    identifier      shift and go to state 9
+    integer         shift and go to state 6
+
+    assname                        shift and go to state 5
+    expression                     shift and go to state 10
+    name                           shift and go to state 7
+    statement                      shift and go to state 28
+
+state 15
+
+    (17) expression -> expression and . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 29
+    name                           shift and go to state 7
+
+state 16
+
+    (18) expression -> expression or . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 30
+    name                           shift and go to state 7
+
+state 17
+
+    (13) expression -> expression modulo . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 31
+    name                           shift and go to state 7
+
+state 18
+
+    (12) expression -> expression power . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 32
+    name                           shift and go to state 7
+
+state 19
+
+    (19) expression -> expression xor . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 33
+    name                           shift and go to state 7
+
+state 20
+
+    (10) expression -> expression times . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 34
+    name                           shift and go to state 7
+
+state 21
+
+    (16) expression -> expression floordiv . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 35
+    name                           shift and go to state 7
+
+state 22
+
+    (8) expression -> expression plus . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 36
+    name                           shift and go to state 7
+
+state 23
+
+    (14) expression -> expression lshift . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 37
+    name                           shift and go to state 7
+
+state 24
+
+    (15) expression -> expression rshift . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 38
+    name                           shift and go to state 7
+
+state 25
+
+    (11) expression -> expression div . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 39
+    name                           shift and go to state 7
+
+state 26
+
+    (9) expression -> expression minus . expression
+    (8) expression -> . expression plus expression
+    (9) expression -> . expression minus expression
+    (10) expression -> . expression times expression
+    (11) expression -> . expression div expression
+    (12) expression -> . expression power expression
+    (13) expression -> . expression modulo expression
+    (14) expression -> . expression lshift expression
+    (15) expression -> . expression rshift expression
+    (16) expression -> . expression floordiv expression
+    (17) expression -> . expression and expression
+    (18) expression -> . expression or expression
+    (19) expression -> . expression xor expression
+    (20) expression -> . integer
+    (21) expression -> . name
+    (23) name -> . identifier
+
+    integer         shift and go to state 6
+    identifier      shift and go to state 11
+
+    expression                     shift and go to state 40
+    name                           shift and go to state 7
+
+state 27
+
+    (6) statement -> assname equals expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    newline         reduce using rule 6 (statement -> assname equals expression .)
+    $end            reduce using rule 6 (statement -> assname equals expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+
+state 28
+
+    (4) statement_list -> statement_list newline statement .
+
+    newline         reduce using rule 4 (statement_list -> statement_list newline statement .)
+    $end            reduce using rule 4 (statement_list -> statement_list newline statement .)
+
+
+state 29
+
+    (17) expression -> expression and expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 17 (expression -> expression and expression .)
+    $end            reduce using rule 17 (expression -> expression and expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! minus           [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! times           [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! div             [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! power           [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! modulo          [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! lshift          [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! rshift          [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! floordiv        [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! and             [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! or              [ reduce using rule 17 (expression -> expression and expression .) ]
+  ! xor             [ reduce using rule 17 (expression -> expression and expression .) ]
+
+
+state 30
+
+    (18) expression -> expression or expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 18 (expression -> expression or expression .)
+    $end            reduce using rule 18 (expression -> expression or expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! minus           [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! times           [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! div             [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! power           [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! modulo          [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! lshift          [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! rshift          [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! floordiv        [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! and             [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! or              [ reduce using rule 18 (expression -> expression or expression .) ]
+  ! xor             [ reduce using rule 18 (expression -> expression or expression .) ]
+
+
+state 31
+
+    (13) expression -> expression modulo expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 13 (expression -> expression modulo expression .)
+    $end            reduce using rule 13 (expression -> expression modulo expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! minus           [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! times           [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! div             [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! power           [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! modulo          [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! lshift          [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! rshift          [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! floordiv        [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! and             [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! or              [ reduce using rule 13 (expression -> expression modulo expression .) ]
+  ! xor             [ reduce using rule 13 (expression -> expression modulo expression .) ]
+
+
+state 32
+
+    (12) expression -> expression power expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    plus            reduce using rule 12 (expression -> expression power expression .)
+    minus           reduce using rule 12 (expression -> expression power expression .)
+    times           reduce using rule 12 (expression -> expression power expression .)
+    div             reduce using rule 12 (expression -> expression power expression .)
+    modulo          reduce using rule 12 (expression -> expression power expression .)
+    lshift          reduce using rule 12 (expression -> expression power expression .)
+    rshift          reduce using rule 12 (expression -> expression power expression .)
+    floordiv        reduce using rule 12 (expression -> expression power expression .)
+    and             reduce using rule 12 (expression -> expression power expression .)
+    or              reduce using rule 12 (expression -> expression power expression .)
+    xor             reduce using rule 12 (expression -> expression power expression .)
+    newline         reduce using rule 12 (expression -> expression power expression .)
+    $end            reduce using rule 12 (expression -> expression power expression .)
+    power           shift and go to state 18
+
+  ! power           [ reduce using rule 12 (expression -> expression power expression .) ]
+  ! plus            [ shift and go to state 22 ]
+  ! minus           [ shift and go to state 26 ]
+  ! times           [ shift and go to state 20 ]
+  ! div             [ shift and go to state 25 ]
+  ! modulo          [ shift and go to state 17 ]
+  ! lshift          [ shift and go to state 23 ]
+  ! rshift          [ shift and go to state 24 ]
+  ! floordiv        [ shift and go to state 21 ]
+  ! and             [ shift and go to state 15 ]
+  ! or              [ shift and go to state 16 ]
+  ! xor             [ shift and go to state 19 ]
+
+
+state 33
+
+    (19) expression -> expression xor expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 19 (expression -> expression xor expression .)
+    $end            reduce using rule 19 (expression -> expression xor expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! minus           [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! times           [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! div             [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! power           [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! modulo          [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! lshift          [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! rshift          [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! floordiv        [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! and             [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! or              [ reduce using rule 19 (expression -> expression xor expression .) ]
+  ! xor             [ reduce using rule 19 (expression -> expression xor expression .) ]
+
+
+state 34
+
+    (10) expression -> expression times expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    plus            reduce using rule 10 (expression -> expression times expression .)
+    minus           reduce using rule 10 (expression -> expression times expression .)
+    times           reduce using rule 10 (expression -> expression times expression .)
+    div             reduce using rule 10 (expression -> expression times expression .)
+    modulo          reduce using rule 10 (expression -> expression times expression .)
+    lshift          reduce using rule 10 (expression -> expression times expression .)
+    rshift          reduce using rule 10 (expression -> expression times expression .)
+    floordiv        reduce using rule 10 (expression -> expression times expression .)
+    and             reduce using rule 10 (expression -> expression times expression .)
+    or              reduce using rule 10 (expression -> expression times expression .)
+    xor             reduce using rule 10 (expression -> expression times expression .)
+    newline         reduce using rule 10 (expression -> expression times expression .)
+    $end            reduce using rule 10 (expression -> expression times expression .)
+    power           shift and go to state 18
+
+  ! power           [ reduce using rule 10 (expression -> expression times expression .) ]
+  ! plus            [ shift and go to state 22 ]
+  ! minus           [ shift and go to state 26 ]
+  ! times           [ shift and go to state 20 ]
+  ! div             [ shift and go to state 25 ]
+  ! modulo          [ shift and go to state 17 ]
+  ! lshift          [ shift and go to state 23 ]
+  ! rshift          [ shift and go to state 24 ]
+  ! floordiv        [ shift and go to state 21 ]
+  ! and             [ shift and go to state 15 ]
+  ! or              [ shift and go to state 16 ]
+  ! xor             [ shift and go to state 19 ]
+
+
+state 35
+
+    (16) expression -> expression floordiv expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 16 (expression -> expression floordiv expression .)
+    $end            reduce using rule 16 (expression -> expression floordiv expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! minus           [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! times           [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! div             [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! power           [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! modulo          [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! lshift          [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! rshift          [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! floordiv        [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! and             [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! or              [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+  ! xor             [ reduce using rule 16 (expression -> expression floordiv expression .) ]
+
+
+state 36
+
+    (8) expression -> expression plus expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    plus            reduce using rule 8 (expression -> expression plus expression .)
+    minus           reduce using rule 8 (expression -> expression plus expression .)
+    modulo          reduce using rule 8 (expression -> expression plus expression .)
+    lshift          reduce using rule 8 (expression -> expression plus expression .)
+    rshift          reduce using rule 8 (expression -> expression plus expression .)
+    floordiv        reduce using rule 8 (expression -> expression plus expression .)
+    and             reduce using rule 8 (expression -> expression plus expression .)
+    or              reduce using rule 8 (expression -> expression plus expression .)
+    xor             reduce using rule 8 (expression -> expression plus expression .)
+    newline         reduce using rule 8 (expression -> expression plus expression .)
+    $end            reduce using rule 8 (expression -> expression plus expression .)
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+
+  ! times           [ reduce using rule 8 (expression -> expression plus expression .) ]
+  ! div             [ reduce using rule 8 (expression -> expression plus expression .) ]
+  ! power           [ reduce using rule 8 (expression -> expression plus expression .) ]
+  ! plus            [ shift and go to state 22 ]
+  ! minus           [ shift and go to state 26 ]
+  ! modulo          [ shift and go to state 17 ]
+  ! lshift          [ shift and go to state 23 ]
+  ! rshift          [ shift and go to state 24 ]
+  ! floordiv        [ shift and go to state 21 ]
+  ! and             [ shift and go to state 15 ]
+  ! or              [ shift and go to state 16 ]
+  ! xor             [ shift and go to state 19 ]
+
+
+state 37
+
+    (14) expression -> expression lshift expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 14 (expression -> expression lshift expression .)
+    $end            reduce using rule 14 (expression -> expression lshift expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! minus           [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! times           [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! div             [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! power           [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! modulo          [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! lshift          [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! rshift          [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! floordiv        [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! and             [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! or              [ reduce using rule 14 (expression -> expression lshift expression .) ]
+  ! xor             [ reduce using rule 14 (expression -> expression lshift expression .) ]
+
+
+state 38
+
+    (15) expression -> expression rshift expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+  ! shift/reduce conflict for plus resolved as shift
+  ! shift/reduce conflict for minus resolved as shift
+  ! shift/reduce conflict for times resolved as shift
+  ! shift/reduce conflict for div resolved as shift
+  ! shift/reduce conflict for power resolved as shift
+  ! shift/reduce conflict for modulo resolved as shift
+  ! shift/reduce conflict for lshift resolved as shift
+  ! shift/reduce conflict for rshift resolved as shift
+  ! shift/reduce conflict for floordiv resolved as shift
+  ! shift/reduce conflict for and resolved as shift
+  ! shift/reduce conflict for or resolved as shift
+  ! shift/reduce conflict for xor resolved as shift
+    newline         reduce using rule 15 (expression -> expression rshift expression .)
+    $end            reduce using rule 15 (expression -> expression rshift expression .)
+    plus            shift and go to state 22
+    minus           shift and go to state 26
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+    modulo          shift and go to state 17
+    lshift          shift and go to state 23
+    rshift          shift and go to state 24
+    floordiv        shift and go to state 21
+    and             shift and go to state 15
+    or              shift and go to state 16
+    xor             shift and go to state 19
+
+  ! plus            [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! minus           [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! times           [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! div             [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! power           [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! modulo          [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! lshift          [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! rshift          [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! floordiv        [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! and             [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! or              [ reduce using rule 15 (expression -> expression rshift expression .) ]
+  ! xor             [ reduce using rule 15 (expression -> expression rshift expression .) ]
+
+
+state 39
+
+    (11) expression -> expression div expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    plus            reduce using rule 11 (expression -> expression div expression .)
+    minus           reduce using rule 11 (expression -> expression div expression .)
+    times           reduce using rule 11 (expression -> expression div expression .)
+    div             reduce using rule 11 (expression -> expression div expression .)
+    modulo          reduce using rule 11 (expression -> expression div expression .)
+    lshift          reduce using rule 11 (expression -> expression div expression .)
+    rshift          reduce using rule 11 (expression -> expression div expression .)
+    floordiv        reduce using rule 11 (expression -> expression div expression .)
+    and             reduce using rule 11 (expression -> expression div expression .)
+    or              reduce using rule 11 (expression -> expression div expression .)
+    xor             reduce using rule 11 (expression -> expression div expression .)
+    newline         reduce using rule 11 (expression -> expression div expression .)
+    $end            reduce using rule 11 (expression -> expression div expression .)
+    power           shift and go to state 18
+
+  ! power           [ reduce using rule 11 (expression -> expression div expression .) ]
+  ! plus            [ shift and go to state 22 ]
+  ! minus           [ shift and go to state 26 ]
+  ! times           [ shift and go to state 20 ]
+  ! div             [ shift and go to state 25 ]
+  ! modulo          [ shift and go to state 17 ]
+  ! lshift          [ shift and go to state 23 ]
+  ! rshift          [ shift and go to state 24 ]
+  ! floordiv        [ shift and go to state 21 ]
+  ! and             [ shift and go to state 15 ]
+  ! or              [ shift and go to state 16 ]
+  ! xor             [ shift and go to state 19 ]
+
+
+state 40
+
+    (9) expression -> expression minus expression .
+    (8) expression -> expression . plus expression
+    (9) expression -> expression . minus expression
+    (10) expression -> expression . times expression
+    (11) expression -> expression . div expression
+    (12) expression -> expression . power expression
+    (13) expression -> expression . modulo expression
+    (14) expression -> expression . lshift expression
+    (15) expression -> expression . rshift expression
+    (16) expression -> expression . floordiv expression
+    (17) expression -> expression . and expression
+    (18) expression -> expression . or expression
+    (19) expression -> expression . xor expression
+
+    plus            reduce using rule 9 (expression -> expression minus expression .)
+    minus           reduce using rule 9 (expression -> expression minus expression .)
+    modulo          reduce using rule 9 (expression -> expression minus expression .)
+    lshift          reduce using rule 9 (expression -> expression minus expression .)
+    rshift          reduce using rule 9 (expression -> expression minus expression .)
+    floordiv        reduce using rule 9 (expression -> expression minus expression .)
+    and             reduce using rule 9 (expression -> expression minus expression .)
+    or              reduce using rule 9 (expression -> expression minus expression .)
+    xor             reduce using rule 9 (expression -> expression minus expression .)
+    newline         reduce using rule 9 (expression -> expression minus expression .)
+    $end            reduce using rule 9 (expression -> expression minus expression .)
+    times           shift and go to state 20
+    div             shift and go to state 25
+    power           shift and go to state 18
+
+  ! times           [ reduce using rule 9 (expression -> expression minus expression .) ]
+  ! div             [ reduce using rule 9 (expression -> expression minus expression .) ]
+  ! power           [ reduce using rule 9 (expression -> expression minus expression .) ]
+  ! plus            [ shift and go to state 22 ]
+  ! minus           [ shift and go to state 26 ]
+  ! modulo          [ shift and go to state 17 ]
+  ! lshift          [ shift and go to state 23 ]
+  ! rshift          [ shift and go to state 24 ]
+  ! floordiv        [ shift and go to state 21 ]
+  ! and             [ shift and go to state 15 ]
+  ! or              [ shift and go to state 16 ]
+  ! xor             [ shift and go to state 19 ]
+
+WARNING: 
+WARNING: Conflicts:
+WARNING: 
+WARNING: shift/reduce conflict for plus in state 29 resolved as shift
+WARNING: shift/reduce conflict for minus in state 29 resolved as shift
+WARNING: shift/reduce conflict for times in state 29 resolved as shift
+WARNING: shift/reduce conflict for div in state 29 resolved as shift
+WARNING: shift/reduce conflict for power in state 29 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 29 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 29 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 29 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 29 resolved as shift
+WARNING: shift/reduce conflict for and in state 29 resolved as shift
+WARNING: shift/reduce conflict for or in state 29 resolved as shift
+WARNING: shift/reduce conflict for xor in state 29 resolved as shift
+WARNING: shift/reduce conflict for plus in state 30 resolved as shift
+WARNING: shift/reduce conflict for minus in state 30 resolved as shift
+WARNING: shift/reduce conflict for times in state 30 resolved as shift
+WARNING: shift/reduce conflict for div in state 30 resolved as shift
+WARNING: shift/reduce conflict for power in state 30 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 30 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 30 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 30 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 30 resolved as shift
+WARNING: shift/reduce conflict for and in state 30 resolved as shift
+WARNING: shift/reduce conflict for or in state 30 resolved as shift
+WARNING: shift/reduce conflict for xor in state 30 resolved as shift
+WARNING: shift/reduce conflict for plus in state 31 resolved as shift
+WARNING: shift/reduce conflict for minus in state 31 resolved as shift
+WARNING: shift/reduce conflict for times in state 31 resolved as shift
+WARNING: shift/reduce conflict for div in state 31 resolved as shift
+WARNING: shift/reduce conflict for power in state 31 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 31 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 31 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 31 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 31 resolved as shift
+WARNING: shift/reduce conflict for and in state 31 resolved as shift
+WARNING: shift/reduce conflict for or in state 31 resolved as shift
+WARNING: shift/reduce conflict for xor in state 31 resolved as shift
+WARNING: shift/reduce conflict for plus in state 33 resolved as shift
+WARNING: shift/reduce conflict for minus in state 33 resolved as shift
+WARNING: shift/reduce conflict for times in state 33 resolved as shift
+WARNING: shift/reduce conflict for div in state 33 resolved as shift
+WARNING: shift/reduce conflict for power in state 33 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 33 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 33 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 33 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 33 resolved as shift
+WARNING: shift/reduce conflict for and in state 33 resolved as shift
+WARNING: shift/reduce conflict for or in state 33 resolved as shift
+WARNING: shift/reduce conflict for xor in state 33 resolved as shift
+WARNING: shift/reduce conflict for plus in state 35 resolved as shift
+WARNING: shift/reduce conflict for minus in state 35 resolved as shift
+WARNING: shift/reduce conflict for times in state 35 resolved as shift
+WARNING: shift/reduce conflict for div in state 35 resolved as shift
+WARNING: shift/reduce conflict for power in state 35 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 35 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 35 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 35 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 35 resolved as shift
+WARNING: shift/reduce conflict for and in state 35 resolved as shift
+WARNING: shift/reduce conflict for or in state 35 resolved as shift
+WARNING: shift/reduce conflict for xor in state 35 resolved as shift
+WARNING: shift/reduce conflict for plus in state 37 resolved as shift
+WARNING: shift/reduce conflict for minus in state 37 resolved as shift
+WARNING: shift/reduce conflict for times in state 37 resolved as shift
+WARNING: shift/reduce conflict for div in state 37 resolved as shift
+WARNING: shift/reduce conflict for power in state 37 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 37 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 37 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 37 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 37 resolved as shift
+WARNING: shift/reduce conflict for and in state 37 resolved as shift
+WARNING: shift/reduce conflict for or in state 37 resolved as shift
+WARNING: shift/reduce conflict for xor in state 37 resolved as shift
+WARNING: shift/reduce conflict for plus in state 38 resolved as shift
+WARNING: shift/reduce conflict for minus in state 38 resolved as shift
+WARNING: shift/reduce conflict for times in state 38 resolved as shift
+WARNING: shift/reduce conflict for div in state 38 resolved as shift
+WARNING: shift/reduce conflict for power in state 38 resolved as shift
+WARNING: shift/reduce conflict for modulo in state 38 resolved as shift
+WARNING: shift/reduce conflict for lshift in state 38 resolved as shift
+WARNING: shift/reduce conflict for rshift in state 38 resolved as shift
+WARNING: shift/reduce conflict for floordiv in state 38 resolved as shift
+WARNING: shift/reduce conflict for and in state 38 resolved as shift
+WARNING: shift/reduce conflict for or in state 38 resolved as shift
+WARNING: shift/reduce conflict for xor in state 38 resolved as shift

@@ -33,6 +33,9 @@ def compile():
 	#(fill the flatStmts tree with assignment statements)
 	
 	flatten(ast)
+	# print "///////////////////////////////////////"
+	# print ast
+	# print "///////////////////////////////////////"
 	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
 	print 'define i32 @input() nounwind uwtable ssp {'
@@ -96,7 +99,8 @@ def flattenStmt(n):
 			sys.exit('Tuple assignment not permitted')
 
 		if isinstance(n.expr, Name):
-			temp = Assign(AssName(genSymFromVar(n.name.name)),Name(flattenExp(n.expr)))
+
+			temp = Assign(AssName(genSymFromVar(n.name.name)),Name(flattenExp(n.expr,genSym())))
 			flatStmts.append(temp)
 			
 		else:
