@@ -1,10 +1,11 @@
 #Homework 2 Compiler
 #Mrigya Agarwal, Christine Graff, Giuseppe Mendola
-
-import compiler
-from compiler.ast import *
 import sys
 import operator
+import os
+import a3test
+from AstClasses import *
+
 
 
 #from llvm import *
@@ -24,15 +25,14 @@ def compile():
 	
 	#the file to interpret is the first argument given
 	filePath = sys.argv[1]
-	
 	#abstract syntax tree for the contents of the file
-	ast = compiler.parseFile(filePath)
+	ast=a3test.getAST()
+	#ast = compiler.parseFile(filePath)
 	#print "original ast: ", ast, "\n ********"
 	#flatten the ast
 	#(fill the flatStmts tree with assignment statements)
-	flatten(ast)
-
 	
+	flatten(ast)
 	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
 	print 'define i32 @input() nounwind uwtable ssp {'
@@ -82,7 +82,7 @@ def compile():
 def flatten(n):
 	
 	if isinstance(n, Module):
-		flatten(n.node)
+		flatten(n.nodes)
 	#iterate through all of the statement nodes 
 	elif isinstance(n, Stmt):
 		for x in n.nodes:
@@ -92,15 +92,15 @@ def flattenStmt(n):
 	#if you have an Assign, then use the given variable to assign
 	#to the expression
 	if isinstance(n, Assign):
-		if not isinstance(n.nodes[0], AssName) or len(n.nodes)>1:
+		if not isinstance(n.name, AssName): #or len(n.nodes)>1:
 			sys.exit('Tuple assignment not permitted')
 
 		if isinstance(n.expr, Name):
-			temp = Assign([AssName(genSymFromVar(n.nodes[0].name),'OP_ASSIGN')],Name(flattenExp(n.expr,None)))
+			temp = Assign(AssName(genSymFromVar(n.name.name)),Name(flattenExp(n.expr)))
 			flatStmts.append(temp)
 			
 		else:
-			flattenExp(n.expr, genSymFromVar(n.nodes[0].name))
+			flattenExp(n.expr, genSymFromVar(n.name.name))
 		
 	#if you have a discard, then generate a variable to assign
 	#to the expression
@@ -114,7 +114,7 @@ def flattenStmt(n):
 		b = genSym()
 		t1 = flattenExp(n.nodes[0], a)
 		n.nodes[0] =Name(t1)
-		temp = Assign([AssName(b, 'OP_ASSIGN')], n)
+		temp = Assign(AssName(b), n)
 		flatStmts.append(temp)
 		return b
 	
@@ -124,7 +124,7 @@ def flattenStmt(n):
 		t1 = Name(flattened_expr)
 		n.expr = t1
 		n.node = Name(genSymFromVar(n.node.name))
-		temp = Assign([AssName(n.node.name, 'OP_ASSIGN')],n)
+		temp = Assign(AssName(n.node.name),n)
 		flatStmts.append(temp)
 
 
@@ -139,7 +139,7 @@ def flattenExp(n, x):
 	if isinstance(n,Const):
 		if not isinstance(n.value, int):
 			sys.exit('ERROR! All constants must be integer values')
-		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
+		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 		return x
 	#if we have a name, return a variable of the form %v
@@ -158,7 +158,7 @@ def flattenExp(n, x):
 		n.left = Name(leftStmt)
 		n.right = Name(rightStmt)
 		#assign the add operation n to the varialbe x and append to the statements list
-		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
+		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 		return x
 
@@ -170,7 +170,7 @@ def flattenExp(n, x):
 		n.expr = Name(tempExpr)
 		#now assign the modified UnarySub, n, to variable x
 		#and append it to the list
-		temp = Assign([AssName(x, 'OP_ASSIGN')],n)
+		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 		return x
 
@@ -194,7 +194,7 @@ def flattenExp(n, x):
 		
 		#make the assignment to the bit operator needed and add it to the
 		#flatStmts list
-		temp = Assign([AssName(x, 'OP_ASSIGN')],op)
+		temp = Assign(AssName(x),op)
 		flatStmts.append(temp)
 		
 		#if you only have 2 operands,
@@ -222,7 +222,7 @@ def flattenExp(n, x):
 				elif isinstance(n, Bitxor):
 					opTemp = Bitxor([Name(currentVar), Name(flattenExpTemp)])
 				
-				temp = Assign([AssName(c, 'OP_ASSIGN')], opTemp)
+				temp = Assign(AssName(c), opTemp)
 				flatStmts.append(temp)
 				
 				currentVar = c
@@ -235,7 +235,7 @@ def flattenExp(n, x):
 		flattened_expr = flattenExp(n.expr, a)
 		t1 = Name(flattened_expr)
 		n.expr = t1
-		temp = Assign([AssName(n.expr, 'OP_ASSIGN')],n)
+		temp = Assign(AssName(n.expr),n)
 		flatStmts.append(temp)
 
 
@@ -247,7 +247,7 @@ def flattenExp(n, x):
 			flattened_expr = flattenExp(n.args[i], a)
 			lst.append(Name(flattened_expr))
 		n.args = lst
-		temp = Assign([AssName(x, 'OP_ASSIGN')], n)
+		temp = Assign(AssName(x), n)
 		flatStmts.append(temp)
 		return x
 		
@@ -277,8 +277,8 @@ def alloc():
 	
 	lst = []
 	for element in flatStmts:
-		if element.nodes[0].name not in lst:
-			lst.append(element.nodes[0].name)
+		if element.name.name not in lst:
+			lst.append(element.name.name)
 	
 	for element in lst:
 		print "	 "+element + " = alloca i32, align 4"
@@ -291,16 +291,16 @@ def astToLLVM(ast, x):
 	if isinstance(ast, Assign):
 		#if the assign statement has only one constant to the right of the equals sign, output a store instruction
 		if isinstance(ast.expr, Const):
-			print "	 "+ "store i32 "+str(ast.expr.value)+", i32* " + ast.nodes[0].name+", align 4"
+			print "	 "+ "store i32 "+str(ast.expr.value)+", i32* " + ast.name.name+", align 4"
 		if isinstance(ast.expr, Name):
 			a = genSym()
 			obj = load(ast.expr.name, a)
 			print astToLLVM(obj, a)
-			print "  "+"store i32 "+a+", i32* " + ast.nodes[0].name+", align 4"
+			print "  "+"store i32 "+a+", i32* " + ast.name.name+", align 4"
 		#otherwise it means there is a more complex expression to the right of the equals sign
 		#we need to go deeper
 		else:
-			astToLLVM(ast.expr, ast.nodes[0].name)
+			astToLLVM(ast.expr, ast.name.name)
 	
 	elif isinstance(ast, Const):
 		o = constant(ast);
@@ -490,7 +490,7 @@ class UnaryllvmOp:
 		a = genSym()
 		obj = load(self.exp,a)
 		c = genSym()
-		temp = Assign([AssName(a, 'OP_ASSIGN')],obj)
+		temp = Assign(AssName(a),obj)
 		print astToLLVM(obj, a)
 		print "	 "+c+" = "+self.operation+" i32 0, "+a
 		print "	 "+"store i32 "+c+", i32* "+self.assignTo+", align 4"
@@ -506,8 +506,8 @@ class AugllvmOp:
 		obj = load(self.exp,a)
 		obj2 = load(self.assignTo,b)
 		c = genSym()
-		temp = Assign([AssName(a, 'OP_ASSIGN')],obj)
-		temp2 = Assign([AssName(b, 'OP_ASSIGN')],obj2)
+		temp = Assign(AssName(a),obj)
+		temp2 = Assign(AssName(b),obj2)
 		print astToLLVM(obj, a)
 		print astToLLVM(obj2,b)
 		print "	 "+c+" = "+self.operation+" i32 "+b+", "+a
@@ -521,7 +521,7 @@ class Printllvm:
 		a = genSym()
 		b = genSym()
 		obj = load(self.exp,a)
-		temp = Assign([AssName(a, 'OP_ASSIGN')],obj)
+		temp = Assign(AssName(a),obj)
 		print astToLLVM(obj,a)
 		print "	 "+b+" = call i32 @print_int_nl(i32 "+a+") "
 		
