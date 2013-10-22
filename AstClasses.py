@@ -12,7 +12,7 @@ class Add:
 		self.right=r
 		self.left=l
 	def __repr__(self):
-		return "Add()"
+		return "Add(%s, %s)" % (self.left,self.right)
 	def __str__(self):
 		return "Add(%s, %s)" % (self.left,self.right)
 
@@ -210,7 +210,7 @@ class Stmt:
 	def __init__(self,nodes):
 		self.nodes=nodes
 	def __repr__(self):
-		return "Stmt()"
+		return "Stmt(%s)" % (self.nodes)
 	def __str__(self):
 		return "Stmt(%s)" % (self.nodes)
 

@@ -358,22 +358,32 @@ precedence = (
 			  ('right', 'usub')
 			  )
 
+
 def p_module(p):
 	'module : stmt'
 	p[0] = node.Module(p[1])
+
 
 def p_stmt(p):
 	'stmt : statement_list'
 	p[0]=node.Stmt(p[1])
 
+	
 def p_single_statement_list(p):
 	'statement_list : statement'
 	p[0] = [p[1]]
 
 def p_statement_list(p):
-	'statement_list : statement_list newline statement'
-	p[0] = p[1]+[p[3]]
+	'statement_list : statement_list statement'
+	p[0] = p[1]+[p[2]]
 
+def p_newline_statement(p):
+	'statement : newline statement'
+	p[0] = p[2]
+
+def p_statement_newline(p):
+	'statement : statement newline'
+	p[0] = p[1]
 
 def p_simple_statement(p):
 	'statement : print expression'
@@ -534,6 +544,7 @@ def getAST():
 	file = sys.argv[1]
 	stream = open(file)
 	contents = stream.read()
+	#lex.runmain(lexer)
 	ast=yacc.parse(contents, lexer)
 	return ast
 
