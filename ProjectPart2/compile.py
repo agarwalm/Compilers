@@ -39,32 +39,32 @@ def compile():
 	
 	flatten(ast)
 	
-	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
-	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
-	print 'define i32 @input() nounwind uwtable ssp { ' 
+#	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
+#	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
+#	print 'define i32 @input() nounwind uwtable ssp { ' 
 	
 
-	#	print 'declare i32 @input() nounwind uwtable ssp '
+	print 'declare i32 @input() nounwind uwtable ssp '
 
 	
-	print '  %n = alloca i32, align 4'
-	print '  %1 = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %n)'
-	print '  %2 = load i32* %n, align 4'
-	print '  ret i32 %2'
-	print '}\n'
-	print 'declare i32 @scanf(i8*, ...)\n'
+#	print '  %n = alloca i32, align 4'
+#	print '  %1 = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %n)'
+#	print '  %2 = load i32* %n, align 4'
+#	print '  ret i32 %2'
+#	print '}\n'
+#	print 'declare i32 @scanf(i8*, ...)\n'
 
 	
-	#	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
+	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
 	
-	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
-	print '  %1 = alloca i32, align 4'
-	print '  store i32 %x, i32* %1, align 4'
-	print '  %2 = load i32* %1, align 4'
-	print '  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i32 0, i32 0), i32 %2)'
-	print '  ret i32 0'
-	print '}\n'
-	print 'declare i32 @printf(i8*, ...)'
+#	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
+#	print '  %1 = alloca i32, align 4'
+#	print '  store i32 %x, i32* %1, align 4'
+#	print '  %2 = load i32* %1, align 4'
+#	print '  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i32 0, i32 0), i32 %2)'
+#	print '  ret i32 0'
+#	print '}\n'
+#	print 'declare i32 @printf(i8*, ...)'
 	
 	
 	#output first line needed for the .ll file
