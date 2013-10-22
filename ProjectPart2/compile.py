@@ -195,7 +195,7 @@ def flattenExp(n, x):
 		n.expr = Name(tempExpr)
 		#now assign the modified UnarySub, n, to variable x
 		#and append it to the list
-		temp = Assign(AssName(genSymFromVar(x)),n)
+		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 		return x
 
@@ -206,16 +206,16 @@ def flattenExp(n, x):
 		#nodes of the bit operator
 		a = genSym()
 		b = genSym()
-		flattened_exp1 = flattenExp(n.nodes[0], a)
-		flattened_exp2 = flattenExp(n.nodes[1], b)
+		flattened_exp1 = flattenExp(n.left, a)
+		flattened_exp2 = flattenExp(n.right, b)
 		
 		#create the propper operation for the assignment
 		if isinstance(n, Bitand):
-			op = Bitand([Name(flattened_exp1),Name(flattened_exp2)])
+			op = Bitand(Name(flattened_exp1),Name(flattened_exp2))
 		elif isinstance(n, Bitor):
-			op = Bitor([Name(flattened_exp1),Name(flattened_exp2)])
+			op = Bitor(Name(flattened_exp1),Name(flattened_exp2))
 		elif isinstance(n, Bitxor):
-			op = Bitxor([Name(flattened_exp1),Name(flattened_exp2)])
+			op = Bitxor(Name(flattened_exp1),Name(flattened_exp2))
 		
 		#make the assignment to the bit operator needed and add it to the
 		#flatStmts list
@@ -226,34 +226,34 @@ def flattenExp(n, x):
 		#add the assignment to the flatStmts list
 		#note: the constant assignments were already made when you
 		#called flattenExp on n.nodes[0] and n.nodes[1]
-		if len(n.nodes)==2:
-			return x
+			#if len(n.nodes)==2:
+		return x
 		
 		#if you have more than two operands to bitAnd
 		#you have to iterate through the list of nodes
-		else:
+			#		else:
 			#the last variable that you assigned a bitAnd to
-			currentVar = x
-			
-			for i in range(2, len(n.nodes)):
-				c = genSym()
-				d = genSym()
-				
-				flattenExpTemp = flattenExp(n.nodes[i], d)
-				if isinstance(n, Bitand):
-					opTemp = Bitand([Name(currentVar), Name(flattenExpTemp)])
-				elif isinstance(n, Bitor):
-					opTemp = Bitor([Name(currentVar), Name(flattenExpTemp)])
-				elif isinstance(n, Bitxor):
-					opTemp = Bitxor([Name(currentVar), Name(flattenExpTemp)])
-				
-				temp = Assign(AssName(c), opTemp)
-				flatStmts.append(temp)
-				
-				currentVar = c
-			#this return value isn't actually needed
-			#but just for the sake of consistency it is being returned
-			return currentVar
+#		currentVar = x
+#		
+#		for i in range(2, len(n.nodes)):
+#			c = genSym()
+#			d = genSym()
+#			
+#			flattenExpTemp = flattenExp(n.nodes[i], d)
+#			if isinstance(n, Bitand):
+#				opTemp = Bitand([Name(currentVar), Name(flattenExpTemp)])
+#			elif isinstance(n, Bitor):
+#				opTemp = Bitor([Name(currentVar), Name(flattenExpTemp)])
+#			elif isinstance(n, Bitxor):
+#				opTemp = Bitxor([Name(currentVar), Name(flattenExpTemp)])
+#			
+#			temp = Assign(AssName(c), opTemp)
+#			flatStmts.append(temp)
+#			
+#			currentVar = c
+#		#this return value isn't actually needed
+#		#but just for the sake of consistency it is being returned
+#		return currentVar
 
 	elif isinstance(n, Invert):
 		a = genSym()

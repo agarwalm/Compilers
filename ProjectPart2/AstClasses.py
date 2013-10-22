@@ -75,6 +75,10 @@ class CallFunc:
 	def __init__(self,node,args):
 		self.node=node
 		self.args=args
+	def __repr__(self):
+		return "CallFunc(%s(%s))"%(self.node,self.args)
+	def __str__(self):
+		return "CallFunc(%s(%s))" % (self.node,self.args)
 
 class Const:
 	def __init__(self,value):

@@ -424,29 +424,38 @@ def p_assign_stmt(p):
 	p[0]= node.Assign(p[1], p[3])
 
 
-def p_unary_sub(p):
-	'expression : minus num'
+#def p_unary_sub(p):
+#	'expression : minus num'
+#	p[0] = node.UnarySub(p[2])
+#
+def p_unary_sub_expression(p):
+	'expression : minus expression'
 	p[0] = node.UnarySub(p[2])
 
-def p_unary_sub_expression(p):
-	'expression : minus oparen expression cparen'
-	p[0] = node.UnarySub(p[3])
-
-def p_unary_add(p):
-	'expression : plus num'
-	p[0] = node.UnaryAdd(p[2])
-
+#def p_unary_add(p):
+#	'expression : plus num'
+#	p[0] = node.UnaryAdd(p[2])
+#
 def p_unary_add_expression(p):
-	'expression : plus oparen expression cparen'
-	p[0] = node.UnaryAdd(p[3])
-
-def p_invert(p):
-	'expression : invert num'
-	p[0] = node.Invert(p[2])
+	'expression : plus expression'
+	p[0] = node.UnaryAdd(p[2])
+#
+#def p_invert(p):
+#	'expression : invert num'
+#	p[0] = node.Invert(p[2])
 
 def p_invert_expression(p):
-	'expression : invert oparen expression cparen'
-	p[0] = node.Invert(p[3])
+	'expression : invert expression'
+	p[0] = node.Invert(p[2])
+
+def p_high_prec_expression(p):
+	'expression : expression0'
+	p[0] = p[1]
+
+def p_bracket_expression(p):
+	'expression0 : oparen expression cparen'
+	p[0] = p[2]
+
 
 def p_assign_ops(p):
 	'''statement : name incassign expression
@@ -504,7 +513,7 @@ def p_binary_operators(p):
 	
 		
 def p_int_expression(t):
-	'expression : num'
+	'expression0 : num'
 	t[0] = t[1]
 
 def p_const_rule(t):
@@ -512,7 +521,7 @@ def p_const_rule(t):
 	t[0] = node.Const(t[1])
 
 def p_exp_name(t):
-	'expression : name'
+	'expression0 : name'
 	t[0] = t[1]
 
 def p_assname(t):
