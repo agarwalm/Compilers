@@ -87,7 +87,7 @@ class Const:
 	def __init__(self,value):
 		self.value=value
 	def __repr__(self):
-		return "Const()"
+		return "Const(%s)" % (self.value)
 	def __str__(self):
 		return "Const(%s)" % (self.value)
 
@@ -190,9 +190,9 @@ class Printnl:
 	def __init__(self,nodes):
 		self.nodes=nodes
 	def __repr__(self):
-		return "Print(%s)" % (self.nodes)
+		return "Printnl(%s)" % (self.nodes)
 	def __str__(self):
-		return "Print(%s)" % (self.nodes)
+		return "Printnl(%s)" % (self.nodes)
 
 class Return:
 	def __init__(self,value):
@@ -268,22 +268,25 @@ class WhileNode:
 		
 
 class BoolExp:
-	def __init__(self,left,op,right):
+	def __init__(self,left,op,right,flag):
 		self.left=left
 		self.op = op
 		self.right = right
+		self.flag = flag
 	def __repr__(self):
-		return "BoolExp(%s,%s,%s)" % (self.left,self.op, self.right)
+		return "BoolExp(%s,%s,%s,%s)" % (self.left,self.op, self.right,self.flag)
 	def __str__(self):
-		return "BoolExp(%s,%s,%s)" % (self.left,self.op, self.right)
+		return "BoolExp(%s,%s,%s,%s)" % (self.left,self.op, self.right, self.flag)
+
 
 class Bool:
-	def __init__(self,val):
+	def __init__(self,val, flag):
 		self.value = val
+		self.flag = flag
 	def __repr__(self):
-		return "Bool(%s)" % (self.value)
+		return "Bool(%s,%s)" % (self.value, self.flag)
 	def __str__(self):
-		return "Bool(%s)" % (self.value)
+		return "Bool(%s,%s)" % (self.value, self.flag)
 
 class Tag:
 	def __init__(self,node,flag):

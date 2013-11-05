@@ -31,17 +31,18 @@ def compile():
 	filePath = sys.argv[1]
 	#abstract syntax tree for the contents of the file
 	ast=a3test.getAST()
+	print ast
+	print " "
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 	
-	#print "original ast: ", ast, "\n ********"
-	#flatten the ast
-	#(fill the flatStmts tree with assignment statements)
-	
+
+	#this is where the tagging happens
 	boxingPass(ast);
 	
 	print ast
 	
+	#this is where the flattening happens
 	flatten(ast)
 	
 	for s in flatStmts:
@@ -171,7 +172,7 @@ def boxingPass(n):
 			n.expr = boxingPass(n.expr)
 			return n
 
-	if isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
+	elif isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
 		#if the left and right are integers, they will be boxed.
 		#if they are names, their values have already been boxed.
 		tempL = boxingPass(n.left)
@@ -183,20 +184,23 @@ def boxingPass(n):
 		box = Tag(n, "int")
 		return box
 	
-	if isinstance(n, IfNode):
-		n.expr = boxingPass(n.expr)
+	elif isinstance(n, IfNode):
+		n.expr = n.expr
 		for i in range(0,len(n.nodes)):
 			n.nodes[i] = boxingPass(n.nodes[i])
-		for i in range(0,len(n.alt)):
-			n.alt[i] = boxingPass(n.alt[i])
+		if isinstance(n.alt, IfNode):
+			boxingPass(n.alt)
+		else:
+			for i in range(0,len(n.alt)):
+				n.alt[i] = boxingPass(n.alt[i])
 		return n
 
-	if isinstance(n, WhileNode):
+	elif isinstance(n, WhileNode):
 		n.expr = boxingPass(n.expr)
 		for i in range(0,len(n.nodes)):
 			n.nodes[i] = boxingPass(n.nodes[i])
 
-	if isinstance(n, Printnl):
+	elif isinstance(n, Printnl):
 		if (len(n.nodes) != 1):
 			sys.exit('Print accepts a single integer value')
 		n.nodes[0] = boxingPass(n.nodes[0])
@@ -249,7 +253,9 @@ def flattenStmt(n):
 		if (len(n.nodes) != 1):
 			sys.exit('Print accepts a single integer value')
 		a = genSym()
+		variables.append(a)
 		b = genSym()
+		variables.append(b)
 		t1 = flattenExp(n.nodes[0], a)
 		n.nodes[0] = Name(t1)
 		temp = Assign(AssName(b), n)
@@ -276,38 +282,53 @@ def flattenStmt(n):
 		t = genLabel("T")
 		gotof = GoTo(f)
 		nodes = n.nodes
-		n.nodes = gotof
 		elsestmts = n.alt
-		n.alt = GoTo(t)
-		flatStmts.append(n)
+		
+		tfIf = IfNode(n.expr, gotof, GoTo(t))
+		
+		flatStmts.append(tfIf)
 		flatStmts.append(Label(t))
 		#flatten the statements from the original true block
 		for i in range(0, len(nodes)):
 			d = flattenStmt(nodes[i])
 			
-			
 		#generate a goto END for when you execute the true block and want to skip the else
-		e = genLabel("END")
+		e = "END"
+		
+		if isinstance(elsestmts, IfNode):
+			flatStmts.append(GoTo(e))
+			flatStmts.append(Label(f))
+			a,b = flattenStmt(elsestmts)
+
 
 			
-		if len(elsestmts) >0:
-			gotoe = GoTo(e)
-			flatStmts.append(gotoe)
-			#label F for the false block
-			falselabel = Label(f)
-			flatStmts.append(falselabel)
-			n.alt = gotof
+#tfIf.nodes = GoTo(b)
 			
-			#flatten the statements from the original false block
-			for i in range(0, len(elsestmts)):
-				flattenStmt(nodes[i])
-		
 		else:
-			n.nodes = GoTo(e)
-		
-		#end label for the end of the if statement (where you jump to if the condition is true)
-		endLabel = Label(e)
-		flatStmts.append(endLabel)
+				
+			if len(elsestmts) >0:
+				gotoe = GoTo(e)
+				flatStmts.append(gotoe)
+				#label F for the false block
+				falselabel = Label(f)
+				flatStmts.append(falselabel)
+				n.alt = gotof
+				#flatten the statements from the original false block
+				for i in range(0, len(elsestmts)):
+					flattenStmt(elsestmts[i])
+				
+				flatStmts.append(gotoe)
+
+			
+			else:
+				tfIf.nodes = GoTo(e)
+			
+			#end label for the end of the if statement (where you jump to if the condition is true)
+			endLabel = Label(e)
+			flatStmts.append(endLabel)
+				
+		return t,f
+
 
 			
 	elif isinstance(n, WhileNode):
@@ -325,16 +346,12 @@ def flattenStmt(n):
 		flatStmts.append(bottomlabel)
 		ifcond = IfNode(n.expr, GoTo(t), [])
 		flatStmts.append(ifcond)
-		end = Label(genLabel("END"))
+		end = Label("END")
 		flatStmts.append(end)
 		
 		
 		
 		
-			
-		
-		
-
 	else:
 		sys.exit('unrecognized AST')
 
@@ -453,7 +470,7 @@ def flattenExp(n, x):
 		n.expr = t1
 		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
-
+		return x
 
 
 	elif isinstance(n, CallFunc):
@@ -492,6 +509,8 @@ def genSym():
 #adds a % infront of a given variable name to generate
 #an llvm-friendly variable
 def genSymFromVar(v):
+	if v[0]=="%":
+		return v
 	vStr = "%."+v
 	return vStr
 
@@ -508,6 +527,9 @@ def alloc():
 		variables = lst
 
 
+current_ifcheck = None
+
+
 #generates llvm code from the Assign statements in the flatStmts list
 def astToLLVM(ast, x):
 	
@@ -517,6 +539,8 @@ def astToLLVM(ast, x):
 		if isinstance(ast.expr, Const):
 			codegen_assign_const(ast, ast.name.name)
 		
+		if isinstance(ast.expr, Bool):
+			codegen_assign_bool(ast,ast.name.name)
 
 		
 		if isinstance(ast.expr, Name):
@@ -534,7 +558,7 @@ def astToLLVM(ast, x):
 		return str(ast.value)
 
 	elif isinstance(ast, BoolExp):
-		return codegen_boolExp(ast, x)
+		return codegen_boolExp(ast, x, ast.flag)
 				
 	elif isinstance(ast, Tag):
 		return codegen_tag(ast, x)
@@ -550,6 +574,10 @@ def astToLLVM(ast, x):
 
 	elif isinstance(ast, Label):
 		return codegen_label(ast)
+
+	elif isinstance(ast, GoTo):
+		print "     br label %"+ast.label
+	
 	
 	
 	elif isinstance(ast, Add):
@@ -623,6 +651,20 @@ def astToLLVM(ast, x):
 def codegen_assign_const(ast,x):
 	output_store(str(ast.expr.value),x)
 
+def codegen_assign_bool(ast,x):
+	val = astToLLVM(ast.expr,x)
+	if ast.expr.flag == "check":
+		global current_ifcheck
+		a = genSym();
+		print "	 "+a + " = alloca i1, align 4"
+		output_istore(val,a)
+		b = genSym()
+		output_iload(b,a)
+		current_ifcheck = b
+		
+	else:
+		output_store(val,x)
+
 
 def codegen_tag(ast,x):
 	c = genSym()
@@ -687,7 +729,7 @@ def codegen_assign_name(ast):
 	output_load(a, ast.expr.name);
 	output_store(a, ast.name.name)
 
-def codegen_boolExp(ast,x):
+def codegen_boolExp(ast,x, flag):
 	a = genSym()
 	b = genSym()
 	output_load(a, astToLLVM(ast.left,x))
@@ -698,19 +740,28 @@ def codegen_boolExp(ast,x):
 		print  "  "+c+" = icmp slt i32 "+a+", "+b
 	elif ast.op == ">":
 		print  "  "+c+" = icmp sgt i32 "+a+", "+b
-			
-	print "	 "+d+" = zext i1 "+c+" to i32"
-	print " " 
-	output_store(d,x)
+	
+	if flag == "check":
+		global current_ifcheck
+		current_ifcheck = c
+
+
+	else:
+
+		print "	 "+d+" = zext i1 "+c+" to i32"
+		print " " 
+		output_store(d,x)
 
 def codegen_if(ast,x):
-	a = genSym()
-	output_load(a, ast.expr)
-	print "   br i1 "+a+", label "+genSymFromVar(ast.alt.label)+", label "+genSymFromVar(ast.nodes.label)
+	global current_ifcheck
+	print "   br i1 "+current_ifcheck+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
 	print " "
 
+
 def codegen_label(ast):
-	print "; <label>:"+ast.name
+#	if ast.name[0:-1] == "END":
+#		print "    br label %"+ast.name
+	print ast.name+":"
 
 
 def codegen_binop(ast,x, op):
@@ -822,8 +873,14 @@ def codegen_callfunc(ast,x):
 def output_load(tempvar, val):
 	print "	 "+tempvar+" = load i32* "+ val+", align 4"
 
+def output_iload(tempvar, val):
+	print "	 "+tempvar+" = load i1* "+ val+", align 4"
+
 def output_store(val, var):
 	print "  "+"store i32 "+val+", i32* " + var+", align 4"
+
+def output_istore(val, var):
+	print "  "+"store i1 "+val+", i1* " + var+", align 4"
 
 def output_operation(a,b,c, op):
 	print "	 "+a+" = "+op+" i32 "+b+", "+c

@@ -456,10 +456,12 @@ def p_whilestmt(p):
 
 def p_if(p):
 	'ifstmt : if boolexp colon newline indent statement_list dedent'
+	p[2].flag = "check"
 	p[0] = node.IfNode(p[2],p[6],[])
 
 def p_if_with_else(p):
 	'ifstmt : if boolexp colon newline indent statement_list dedent elsestmt'
+	p[2].flag = "check"
 	p[0] = node.IfNode(p[2],p[6],p[8])
 
 def p_else(p):
@@ -468,14 +470,17 @@ def p_else(p):
 
 def p_elif(p):
 	'elsestmt : elif boolexp colon newline indent statement_list dedent'
+	p[2].flag = "check"
 	p[0] = node.IfNode(p[2], p[6])
 
 def p_elif_with_else(p):
 	'elsestmt : elif boolexp colon newline indent statement_list dedent elsestmt'
+	p[2].flag = "check"
 	p[0] = node.IfNode(p[2], p[6], p[8])
 
 def p_while(p):
 	'whilestmt : while boolexp colon newline indent statement_list dedent'
+	p[2].flag = "check"
 	p[0] = node.WhileNode(p[2], p[6])
 
 def p_input_exp(p):
@@ -603,7 +608,7 @@ def p_boolexp(p):
 			 | expression gequal expression
 			 | expression isnotequal expression
 		     | expression isequal expression'''
-	p[0] = node.BoolExp(p[1], p[2], p[3])
+	p[0] = node.BoolExp(p[1], p[2], p[3], None)
 	
 		
 def p_int_expression(t):
@@ -636,9 +641,9 @@ def p_boolean(t):
 		       | false'''
 	if t[1] == "True":
 		#boxing (true turns to 5 and false turns to 1 for some reason)
-		t[0] = node.Bool(1)
+		t[0] = node.Bool(1, None)
 	elif t[1] == "False":
-		t[0] = node.Bool(0)
+		t[0] = node.Bool(0, None)
 
 def p_error(t):
 	sys.exit('Illegal P0 operation')
