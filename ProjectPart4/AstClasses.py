@@ -162,10 +162,10 @@ class Name:
 		return "Name(%s)" % (self.name)
 
 class Not:
-	def __init__(self):
+	def __init__(self, expr):
 		self.expr=expr
 	def __repr__(self):
-		return "Not()"
+		return"Not(%s)" % (self.expr)
 	def __str__(self):
 		return "Not(%s)" % (self.expr)
 
@@ -279,11 +279,11 @@ class BoolExp:
 
 class Bool:
 	def __init__(self,val):
-		self.val = val
+		self.value = val
 	def __repr__(self):
-		return "Bool(%s)" % (self.val)
+		return "Bool(%s)" % (self.value)
 	def __str__(self):
-		return "Bool(%s)" % (self.val)
+		return "Bool(%s)" % (self.value)
 
 class Tag:
 	def __init__(self,node,flag):
@@ -319,6 +319,22 @@ class ConvertToInt:
 		return "ConvertToInt(%s)" % (self.node)
 	def __str__(self):
 		return "ConvertToInt(%s)" % (self.node)
+
+class GoTo:
+	def __init__(self,label):
+		self.label =  label
+	def __repr__(self):
+		return "GoTo(%s)" % (self.label)
+	def __str__(self):
+		return "GoTo(%s)" % (self.label)
+
+class Label:
+	def __init__(self,name):
+		self.name =  name
+	def __repr__(self):
+		return "Label(%s)" % (self.name)
+	def __str__(self):
+		return "Label(%s)" % (self.name)
 
 
 

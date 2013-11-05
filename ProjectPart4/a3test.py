@@ -22,7 +22,7 @@ states = (
 tokens = [
 		  'indent', 'dedent', 'identifier', 'newline', 'comment',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'isequal', 'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'isequal', 'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon', 'not'
 		  ]
 
 t_indent_ignore = ''
@@ -237,6 +237,10 @@ def t_main_true(t):
 
 def t_main_colon(t):
 	r':'
+	return t
+
+def t_main_not(t):
+	r'not'
 	return t
 
 
@@ -533,6 +537,7 @@ def p_bracket_expression(p):
 	p[0] = p[2]
 
 
+
 def p_assign_ops(p):
 	'''statement : name incassign expression
 		| name decassign expression
@@ -546,6 +551,10 @@ def p_assign_ops(p):
 		| name xorassign expression
 		| name powerassign expression '''
 	p[0] = node.AugAssign(p[1], p[2], p[3])
+
+def p_negation(p):
+	'expression : not expression'
+	p[0] = node.Not(p[2])
 
 
 def p_binary_operators(p):
@@ -608,6 +617,10 @@ def p_const_rule(t):
 
 def p_exp_name(t):
 	'expression0 : name'
+	t[0] = t[1]
+
+def p_exp_name(t):
+	'expression0 : boolean'
 	t[0] = t[1]
 
 def p_assname(t):
