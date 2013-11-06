@@ -446,6 +446,31 @@ def p_name_print(p):
 	'statement : print name'
 	p[0] = node.Printnl([p[2]])
 
+def p_input_exp(p):
+	'expression : input oparen parameters cparen'
+	p[0] = node.CallFunc(node.Name(p[1]),p[3])
+
+def p_single_param(p):
+	'parameters : expression'
+	p[0] = [p[1]]
+
+def p_params(p):
+	'parameters : parameters comma expression '
+	p[0] = p[1] + [p[1]]
+
+def p_empty_params(p):
+	'parameters : '
+	p[0] = []
+
+def p_assign_stmt(p):
+	'statement : assname equals expression'
+	p[0]= node.Assign(p[1], p[3])
+
+
+def p_expression_statement(p):
+	'statement : expression'
+	p[0] = node.Discard(p[1])
+
 def p_ifstmt(p):
 	'statement : ifstmt'
 	p[0] = p[1]
@@ -453,6 +478,112 @@ def p_ifstmt(p):
 def p_whilestmt(p):
 	'statement : whilestmt'
 	p[0] = p[1]
+
+def p_assign_ops(p):
+	'''statement : name incassign expression
+		| name decassign expression
+		| name divassign expression
+		| name mulassign expression
+		| name modassign expression
+		| name lshiftassign expression
+		| name rshiftassign expression
+		| name andassign expression
+		| name orassign expression
+		| name xorassign expression
+		| name powerassign expression '''
+	p[0] = node.AugAssign(p[1], p[2], p[3])
+
+
+
+
+def p_bool(p):
+	'expression : boolexp'
+	p[0] = p[1]
+
+def p_booleanexp(p):
+	'boolexp : boolean'
+	p[0] = p[1]
+
+
+def p_unary_sub_expression(p):
+	'expression : minus expression'
+	p[0] = node.UnarySub(p[2])
+
+
+def p_unary_add_expression(p):
+	'expression : plus expression'
+	p[0] = node.UnaryAdd(p[2])
+
+
+def p_invert_expression(p):
+	'expression : invert expression'
+	p[0] = node.Invert(p[2])
+
+def p_boolexp(p):
+	'''boolexp : expression lt expression
+		| expression gt expression
+		| expression lequal expression
+		| expression gequal expression
+		| expression isnotequal expression
+		| expression isequal expression'''
+	p[0] = node.BoolExp(p[1], p[2], p[3], None)
+
+def p_high_prec_expression(p):
+	'expression : expression0'
+	p[0] = p[1]
+
+def p_bracket_expression(p):
+	'expression : oparen expression cparen'
+	p[0] = p[2]
+
+def p_negation(p):
+	'expression : not expression'
+	p[0] = node.Not(p[2])
+
+def p_name_exp(p):
+	'expression : name'
+	p[0] = p[1]
+
+
+def p_binary_operators(p):
+	'''expression : expression plus expression
+		| expression minus expression
+		| expression times expression
+		| expression div expression
+		| expression power expression
+		| expression modulo expression
+		| expression lshift expression
+		| expression rshift expression
+		| expression floordiv expression
+		| expression and expression
+		| expression or expression
+		| expression xor expression'''
+	
+	if p[2] == '+':
+		p[0] = node.Add(p[1], p[3])
+	elif p[2] == '-':
+		p[0] = node.Sub(p[1], p[3])
+	elif p[2] == '*':
+		p[0] = node.Mul(p[1], p[3])
+	elif p[2] == '/':
+		p[0] = node.Div(p[1], p[3])
+	elif p[2] == '**':
+		p[0] = node.Power(p[1], p[3])
+	elif p[2] == '%':
+		p[0] = node.Mod(p[1], p[3])
+	elif p[2] == '//':
+		p[0] = node.FloorDiv(p[1], p[3])
+	elif p[2] == '>>':
+		p[0] = node.RightShift(p[1], p[3])
+	elif p[2] == '<<':
+		p[0] = node.LeftShift(p[1], p[3])
+	elif p[2] == '&':
+		p[0] = node.Bitand(p[1],p[3])
+	elif p[2] == '|':
+		p[0] = node.Bitor(p[1],p[3])
+	elif p[2] == '^':
+		p[0] = node.Bitxor(p[1],p[3])
+
 
 def p_if(p):
 	'ifstmt : if boolexp colon newline indent statement_list dedent'
@@ -483,136 +614,21 @@ def p_while(p):
 	p[2].flag = "check"
 	p[0] = node.WhileNode(p[2], p[6])
 
-def p_input_exp(p):
-	'expression : input oparen parameters cparen'
-	p[0] = node.CallFunc(node.Name(p[1]),p[3])
-
-def p_single_param(p):
-	'parameters : expression'
-	p[0] = [p[1]]
-
-def p_params(p):
-	'parameters : parameters comma expression '
-	p[0] = p[1] + [p[1]]
-
-def p_empty_params(p):
-	'parameters : '
-	p[0] = []
-
-
-def p_expression_statement(p):
-	'statement : expression'
-	p[0] = node.Discard(p[1])
-
-def p_assign_stmt(p):
-	'statement : assname equals expression'
-	p[0]= node.Assign(p[1], p[3])
 
 
 
-def p_bool(p):
-	'expression : boolexp'
-	p[0] = p[1]
 
-def p_booleanexp(p):
-	'boolexp : boolean'
-	p[0] = p[1]
-
-
-def p_unary_sub_expression(p):
-	'expression : minus expression'
-	p[0] = node.UnarySub(p[2])
-
-
-def p_unary_add_expression(p):
-	'expression : plus expression'
-	p[0] = node.UnaryAdd(p[2])
-
-
-def p_invert_expression(p):
-	'expression : invert expression'
-	p[0] = node.Invert(p[2])
-
-def p_high_prec_expression(p):
-	'expression : expression0'
-	p[0] = p[1]
-
-def p_bracket_expression(p):
-	'expression0 : oparen expression cparen'
-	p[0] = p[2]
-
-
-
-def p_assign_ops(p):
-	'''statement : name incassign expression
-		| name decassign expression
-		| name divassign expression
-		| name mulassign expression
-		| name modassign expression
-		| name lshiftassign expression
-		| name rshiftassign expression
-		| name andassign expression
-		| name orassign expression
-		| name xorassign expression
-		| name powerassign expression '''
-	p[0] = node.AugAssign(p[1], p[2], p[3])
-
-def p_negation(p):
-	'expression : not expression'
-	p[0] = node.Not(p[2])
-
-
-def p_binary_operators(p):
-	'''expression : expression plus expression
-				| expression minus expression
-				| expression times expression
-				| expression div expression
-				| expression power expression
-				| expression modulo expression
-				| expression lshift expression
-				| expression rshift expression
-				| expression floordiv expression
-				| expression and expression
-				| expression or expression
-				| expression xor expression'''
-
-	if p[2] == '+':
-		p[0] = node.Add(p[1], p[3])
-	elif p[2] == '-':
-		p[0] = node.Sub(p[1], p[3])
-	elif p[2] == '*':
-		p[0] = node.Mul(p[1], p[3])
-	elif p[2] == '/':
-		p[0] = node.Div(p[1], p[3])
-	elif p[2] == '**':
-		p[0] = node.Power(p[1], p[3])
-	elif p[2] == '%':
-		p[0] = node.Mod(p[1], p[3])
-	elif p[2] == '//':
-		p[0] = node.FloorDiv(p[1], p[3])
-	elif p[2] == '>>':
-		p[0] = node.RightShift(p[1], p[3])
-	elif p[2] == '<<':
-		p[0] = node.LeftShift(p[1], p[3])
-	elif p[2] == '&':
-		p[0] = node.Bitand(p[1],p[3])
-	elif p[2] == '|':
-		p[0] = node.Bitor(p[1],p[3])
-	elif p[2] == '^':
-		p[0] = node.Bitxor(p[1],p[3])
-
-def p_boolexp(p):
-	'''boolexp : expression lt expression
-		     | expression gt expression
-			 | expression lequal expression
-			 | expression gequal expression
-			 | expression isnotequal expression
-		     | expression isequal expression'''
-	p[0] = node.BoolExp(p[1], p[2], p[3], None)
-	
 		
 def p_int_expression(t):
 	'expression0 : num'
+	t[0] = t[1]
+
+def p_exp_name(t):
+	'expression0 : name'
+	t[0] = t[1]
+
+def p_exp_name(t):
+	'expression1 : boolean'
 	t[0] = t[1]
 
 def p_const_rule(t):
@@ -620,20 +636,15 @@ def p_const_rule(t):
 	#include boxing here
 	t[0] = node.Const(t[1])
 
-def p_exp_name(t):
-	'expression0 : name'
-	t[0] = t[1]
-
-def p_exp_name(t):
-	'expression0 : boolean'
-	t[0] = t[1]
 
 def p_assname(t):
 	'assname : identifier'
+	print t[1]
 	t[0] = node.AssName(t[1])
 
 def p_name(t):
 	'name : identifier'
+	print t[1]
 	t[0] = node.Name(t[1])
 
 def p_boolean(t):
