@@ -18,8 +18,10 @@ varName = 4
 labelnum = 0
 
 #the list of flattened statement nodes
-flatStmts = [];
-variables = [];
+flatStmts = []
+variables = []
+
+endLab = "END"
 
 #gets creates an ast from the contenst of a file name given as an argument
 #generates LLVM code from the contents of the file
@@ -199,6 +201,7 @@ def boxingPass(n):
 		n.expr = boxingPass(n.expr)
 		for i in range(0,len(n.nodes)):
 			n.nodes[i] = boxingPass(n.nodes[i])
+		return n
 
 	elif isinstance(n, Printnl):
 		if (len(n.nodes) != 1):
@@ -293,7 +296,8 @@ def flattenStmt(n):
 			d = flattenStmt(nodes[i])
 			
 		#generate a goto END for when you execute the true block and want to skip the else
-		e = "END"
+		global endLab
+		e = endLab
 		
 		if isinstance(elsestmts, IfNode):
 			flatStmts.append(GoTo(e))
@@ -318,11 +322,15 @@ def flattenStmt(n):
 					flattenStmt(elsestmts[i])
 				
 				flatStmts.append(gotoe)
+				
+				
 
 			
 			else:
 				tfIf.nodes = GoTo(e)
 				flatStmts.append(GoTo(e))
+
+			endLab = genLabel("END")
 
 			
 			#end label for the end of the if statement (where you jump to if the condition is true)
@@ -336,7 +344,7 @@ def flattenStmt(n):
 	elif isinstance(n, WhileNode):
 		
 		b = genLabel("BOTTOM")
-		end = "END"
+		end = genLabel("END")
 		gotob = GoTo(b)
 		
 		flatStmts.append(gotob)

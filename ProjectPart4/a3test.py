@@ -602,7 +602,7 @@ def p_else(p):
 def p_elif(p):
 	'elsestmt : elif boolexp colon newline indent statement_list dedent'
 	p[2].flag = "check"
-	p[0] = node.IfNode(p[2], p[6])
+	p[0] = node.IfNode(p[2], p[6], [])
 
 def p_elif_with_else(p):
 	'elsestmt : elif boolexp colon newline indent statement_list dedent elsestmt'
