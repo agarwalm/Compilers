@@ -442,9 +442,9 @@ def p_simple_statement(p):
 	'statement : print expression'
 	p[0] = node.Printnl([p[2]])
 
-def p_name_print(p):
-	'statement : print name'
-	p[0] = node.Printnl([p[2]])
+#def p_name_print(p):
+#	'statement : print name'
+#	p[0] = node.Printnl([p[2]])
 
 def p_input_exp(p):
 	'expression : input oparen parameters cparen'
@@ -639,12 +639,10 @@ def p_const_rule(t):
 
 def p_assname(t):
 	'assname : identifier'
-	print t[1]
 	t[0] = node.AssName(t[1])
 
 def p_name(t):
 	'name : identifier'
-	print t[1]
 	t[0] = node.Name(t[1])
 
 def p_boolean(t):
