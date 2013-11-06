@@ -627,8 +627,8 @@ def p_exp_name(t):
 	'expression0 : name'
 	t[0] = t[1]
 
-def p_exp_name(t):
-	'expression1 : boolean'
+def p_exp_bool(t):
+	'expression0 : boolean'
 	t[0] = t[1]
 
 def p_const_rule(t):
@@ -639,10 +639,12 @@ def p_const_rule(t):
 
 def p_assname(t):
 	'assname : identifier'
+	print t[1]
 	t[0] = node.AssName(t[1])
 
 def p_name(t):
 	'name : identifier'
+	print t[1]
 	t[0] = node.Name(t[1])
 
 def p_boolean(t):

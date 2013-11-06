@@ -185,7 +185,7 @@ def boxingPass(n):
 		return box
 	
 	elif isinstance(n, IfNode):
-		n.expr = n.expr
+		n.expr = boxingPass(n.expr)
 		for i in range(0,len(n.nodes)):
 			n.nodes[i] = boxingPass(n.nodes[i])
 		if isinstance(n.alt, IfNode):
@@ -334,8 +334,11 @@ def flattenStmt(n):
 
 			
 	elif isinstance(n, WhileNode):
+		
 		b = genLabel("BOTTOM")
+		end = "END"
 		gotob = GoTo(b)
+		
 		flatStmts.append(gotob)
 		t = genLabel("TOP")
 		toplabel = Label(t)
@@ -344,12 +347,14 @@ def flattenStmt(n):
 		for node in n.nodes:
 			flattenStmt(node)
 		
+		flatStmts.append(GoTo(b))
 		bottomlabel = Label(b)
 		flatStmts.append(bottomlabel)
-		ifcond = IfNode(n.expr, GoTo(t), [])
+		n.expr = flattenExp(n.expr, genSym())
+		ifcond = IfNode(n.expr, GoTo(end), GoTo(t))
 		flatStmts.append(ifcond)
-		end = Label("END")
-		flatStmts.append(end)
+		flatStmts.append(GoTo(end))
+		flatStmts.append(Label(end))
 		
 		
 		
