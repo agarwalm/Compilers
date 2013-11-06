@@ -22,7 +22,7 @@ states = (
 tokens = [
 		  'indent', 'dedent', 'identifier', 'newline', 'comment',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floordiv', 'div', 'lt', 'gt', 'isequal', 'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon', 'not'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floorassign', 'floordiv', 'div', 'lt', 'gt', 'isequal', 'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon', 'not', 'strand', 'stror'
 		  ]
 
 t_indent_ignore = ''
@@ -227,6 +227,11 @@ def t_main_isnotequal(t):
 	r'!='
 	return t
 
+def t_main_floorassign(t):
+	r'\/\/\='
+	return t
+	
+
 def t_main_false(t):
 	r'False'
 	return t
@@ -241,6 +246,14 @@ def t_main_colon(t):
 
 def t_main_not(t):
 	r'not'
+	return t
+
+def t_main_strand(t):
+	r'and'
+	return t
+
+def t_main_stror(t):
+	r'or'
 	return t
 
 
@@ -399,13 +412,15 @@ def t_main_comment(t):
 
 
 
-
 precedence = (
 			  ('nonassoc','print', 'lt', 'gt'),
+			  ('left', 'or', 'xor', 'and'),
+			  ('left', 'lshift'),
+			  ('left', 'rshift'),
 			  ('left','plus','minus'),
-			  ('left', 'times', 'div'),
+			  ('left', 'times', 'div', 'floordiv', 'modulo'),
+			  ('right', 'uadd', 'usub', 'invert'),
 			  ('right', 'power'),
-			  ('right', 'usub')
 			  )
 
 
@@ -490,7 +505,8 @@ def p_assign_ops(p):
 		| name andassign expression
 		| name orassign expression
 		| name xorassign expression
-		| name powerassign expression '''
+		| name powerassign expression
+		| name floorassign expression'''
 	p[0] = node.AugAssign(p[1], p[2], p[3])
 
 
@@ -528,6 +544,8 @@ def p_boolexp(p):
 		| expression isequal expression'''
 	p[0] = node.BoolExp(p[1], p[2], p[3], None)
 
+
+
 def p_high_prec_expression(p):
 	'expression : expression0'
 	p[0] = p[1]
@@ -557,7 +575,15 @@ def p_binary_operators(p):
 		| expression floordiv expression
 		| expression and expression
 		| expression or expression
-		| expression xor expression'''
+		| expression xor expression
+		| expression strand expression
+		| expression stror expression
+		| expression lt expression
+		| expression gt expression
+		| expression lequal expression
+		| expression gequal expression
+		| expression isnotequal expression
+		| expression isequal expression'''
 	
 	if p[2] == '+':
 		p[0] = node.Add(p[1], p[3])
@@ -583,6 +609,7 @@ def p_binary_operators(p):
 		p[0] = node.Bitor(p[1],p[3])
 	elif p[2] == '^':
 		p[0] = node.Bitxor(p[1],p[3])
+	elif p[2] == '==' or p[2] == '>' or p[2] == '<' or
 
 
 def p_if(p):
@@ -646,6 +673,9 @@ def p_name(t):
 	'name : identifier'
 	print t[1]
 	t[0] = node.Name(t[1])
+
+
+	
 
 def p_boolean(t):
 	'''boolean : true

@@ -56,27 +56,27 @@ def compile():
 	print 'define i32 @input() nounwind uwtable ssp { '
 	
 	
-	#print 'declare i32 @input() nounwind uwtable ssp '
+	print 'declare i32 @input() nounwind uwtable ssp '
 	
 	
-	print '  %n = alloca i32, align 4'
-	print '  %1 = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %n)'
-	print '  %2 = load i32* %n, align 4'
-	print '  ret i32 %2'
-	print '}\n'
-	print 'declare i32 @scanf(i8*, ...)\n'
+#	print '  %n = alloca i32, align 4'
+#	print '  %1 = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %n)'
+#	print '  %2 = load i32* %n, align 4'
+#	print '  ret i32 %2'
+#	print '}\n'
+#	print 'declare i32 @scanf(i8*, ...)\n'
 	
 	
-#print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
+	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
 
-	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
-	print '  %1 = alloca i32, align 4'
-	print '  store i32 %x, i32* %1, align 4'
-	print '  %2 = load i32* %1, align 4'
-	print '  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i32 0, i32 0), i32 %2)'
-	print '  ret i32 0'
-	print '}\n'
-	print 'declare i32 @printf(i8*, ...)'
+#	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
+#	print '  %1 = alloca i32, align 4'
+#	print '  store i32 %x, i32* %1, align 4'
+#	print '  %2 = load i32* %1, align 4'
+#	print '  %3 = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str1, i32 0, i32 0), i32 %2)'
+#	print '  ret i32 0'
+#	print '}\n'
+#	print 'declare i32 @printf(i8*, ...)'
 	
 	
 	#output first line needed for the .ll file
@@ -204,6 +204,7 @@ def boxingPass(n):
 		return n
 
 	elif isinstance(n, Printnl):
+		print "yay got here!"
 		if (len(n.nodes) != 1):
 			sys.exit('Print accepts a single integer value')
 		n.nodes[0] = boxingPass(n.nodes[0])
@@ -240,7 +241,7 @@ def flattenStmt(n):
 		if isinstance(n.expr, Name):
 			x = genSymFromVar(n.name.name)
 			temp = Assign(AssName(x),Name(flattenExp(n.expr,genSym())))
-			variables.append(x)
+			variables.append(n.name.name)
 			flatStmts.append(temp)
 			
 		else:
@@ -253,20 +254,72 @@ def flattenStmt(n):
 		flattenExp(n.expr, genSym())
 
 	elif isinstance(n, Printnl):
+		print "in the print!"
 		if (len(n.nodes) != 1):
 			sys.exit('Print accepts a single integer value')
 		a = genSym()
 		variables.append(a)
 		b = genSym()
 		variables.append(b)
-		t1 = flattenExp(n.nodes[0], a)
-		n.nodes[0] = Name(t1)
+		
+		t1 = Name(flattenExp(n.nodes[0], a))
+		n.nodes[0] = t1;
+#		print t1
+#		f = genLabel("F")
+#		t = genLabel("T")
+#		p = genLabel("P")
+#		
+#		bitcheck = flattenExp(boxingPass(Bitand(t1, Const(3))), genSym())
+#		print "bitcheck: ",bitcheck
+#		variables.append(bitcheck)
+#		boolcheck = flattenExp(boxingPass(BoolExp(Name(bitcheck), "==", Const(0), "check")),genSym())
+#		print "boolcheck: ",boolcheck
+#		
+#		intBoolIf = IfNode(boolcheck, GoTo(f), GoTo(t))
+#		flatStmts.append(intBoolIf)
+#
+#		l = Label(t)
+#		flatStmts.append(l)
+#		
+#		intcon = ConvertToInt(t1)
+#		n.nodes[0] = intcon
+#		
+#		ge = genLabel("END")
+#		flatStmts.append(GoTo(p))
+#
+#		lf = Label(f)
+#		flatStmts.append(lf)
+#		
+#		boolcon = flattenExp(ConvertToInt(t1),genSym())
+#		variables.append(boolcon)
+#		boolcheck2 = flattenExp(BoolExp(Name(boolcon), "==", Const(0), "check"),genSym())
+#		f2 = genLabel("F")
+#		t2 = genLabel("T")
+#		booltfIf = IfNode(boolcheck2, GoTo(f2), GoTo(t2))
+#		flatStmts.append(booltfIf)
+#
+#		flatStmts.append(Label(t2))
+#		n.nodes[0] = "False"
+#
+#		flatStmts.append(GoTo(p))
+#
+#		flatStmts.append(Label(f2))
+#		n.nodes[0] = "True"
+#
+#		flatStmts.append(GoTo(p))
+#
+#		flatStmts.append(Label(p))
+		
 		temp = Assign(AssName(b), n)
 		flatStmts.append(temp)
+#		flatStmts.append(GoTo(ge))
+#flatStmts.append(Label(ge))
 		return b
 	
 	elif isinstance(n, AugAssign):
 		a = genSym()
+		if isinstance(n.exp, Name):
+			a = genSymFromVar(n.exp.name)
 		flattened_expr = flattenExp(n.exp, a)
 		#t1 = Name(flattened_expr)
 		n.exp = Name(a)
@@ -501,7 +554,7 @@ def flattenExp(n, x):
 		
 	
 	else:
-		sys.exit('unrecognized AST')
+		sys.exit('I am an unrecognized AST')
 
 
 
@@ -581,8 +634,8 @@ def astToLLVM(ast, x):
 	elif isinstance(ast, ConvertToInt):
 		return codegen_toint(ast,x)
 	
-#	elif isinstance(ast, ConverToBool):
-#		return codegen_tobool(ast,x)
+	elif isinstance(ast, ConvertToBool):
+		return codegen_tobool(ast,x)
 	
 	elif isinstance(ast, IfNode):
 		return codegen_if(ast,genSym())
@@ -592,8 +645,7 @@ def astToLLVM(ast, x):
 
 	elif isinstance(ast, GoTo):
 		print "     br label %"+ast.label
-	
-	
+
 	
 	elif isinstance(ast, Add):
 		return codegen_binop(ast,x, "add")
@@ -657,6 +709,10 @@ def astToLLVM(ast, x):
 	elif isinstance(ast, CallFunc):
 		return codegen_callfunc(ast, x)
 
+	else:
+		print ast
+		sys.exit('io sono an unrecognized AST')
+
 
 
 
@@ -717,18 +773,31 @@ def codegen_tag(ast,x):
 			astToLLVM(Bitor(Name(x), Name(b)), x)
 
 def codegen_print(ast,x):
-	#TODO: add the check for booleans with an if statement
-	a = genSym();
-	print "	 "+a + " = alloca i32, align 4"
-	output_store(str(2),a)
-	e = astToLLVM(ast.nodes[0], x)
-	astToLLVM(RightShift(Name(e), Name(a)), x)
+#	a = genSym();
+#	print "	 "+a + " = alloca i32, align 4"
+#	output_store(str(2),a)
+#	if ast.nodes[0] == "True":
+#		print genSym()+" = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str1, i32 0, i32 0))"
+#	elif ast.nodes[0] == "False":
+#			print genSym()+"= call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8]* @.str1, i32 0, i32 0))"
+#	
+#	else:
+	#	e = astToLLVM(ast.nodes[0], x)
+	#unbox int
+#	astToLLVM(RightShift(Name(e), Name(a)), x)
 	a = genSym()
 	b = genSym()
-	output_load(a,x)
+	print ast
+	output_load(a,ast.nodes[0].name)
 	output_call(b,"i32","print_int_nl","i32"+a,"")
 
-#def codegen_tobool(ast,x):
+def codegen_tobool(ast,x):
+	a = genSym();
+	b = genSym();
+	print " "
+	print "	 "+a + " = alloca i32, align 4"
+	output_store(str(2),a)
+	astToLLVM(RightShift(Name(astToLLVM(ast.node, genSym())), Name(a)), x)
 
 def codegen_toint(ast,x):
 	a = genSym();
@@ -879,6 +948,8 @@ def  codegen_augassign(ast, x, op):
 		llvmop = "xor"
 	elif (op == "**="):
 		llvmop = "pow"
+	elif (op == "//="):
+		llvmop = "sdiv"
 	a = genSym()
 	b = genSym()
 	output_load(a, e)
