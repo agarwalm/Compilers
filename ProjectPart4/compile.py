@@ -322,6 +322,8 @@ def flattenStmt(n):
 			
 			else:
 				tfIf.nodes = GoTo(e)
+				flatStmts.append(GoTo(e))
+
 			
 			#end label for the end of the if statement (where you jump to if the condition is true)
 			endLabel = Label(e)
