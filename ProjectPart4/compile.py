@@ -755,6 +755,14 @@ def codegen_boolExp(ast,x, flag):
 		print  "  "+c+" = icmp slt i32 "+a+", "+b
 	elif ast.op == ">":
 		print  "  "+c+" = icmp sgt i32 "+a+", "+b
+	elif ast.op == "==":
+		print "   "+c+" = icmp eq i32 "+a+", "+b
+	elif ast.op == "<=":
+		print "   "+c+" = icmp sle i32 "+a+", "+b
+	elif ast.op == ">=":
+		print "   "+c+" = icmp sge i32 "+a+", "+b
+	elif ast.op == "!=":
+		print "   "+c+" = icmp ne i32 "+a+", "+b
 	
 	if flag == "check":
 		global current_ifcheck
