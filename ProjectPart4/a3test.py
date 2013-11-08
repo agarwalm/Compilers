@@ -195,6 +195,7 @@ def t_main_input(t):
 	r'input'
 	return t
 
+
 def t_main_while(t):
 	r'while'
 	return t
@@ -513,12 +514,12 @@ def p_assign_ops(p):
 
 
 def p_bool(p):
-	'expression : boolexp'
+	'expression : boolean'
 	p[0] = p[1]
 
-def p_booleanexp(p):
-	'boolexp : boolean'
-	p[0] = p[1]
+#def p_booleanexp(p):
+#	'boolexp : boolean'
+#	p[0] = p[1]
 
 
 def p_unary_sub_expression(p):
@@ -535,14 +536,14 @@ def p_invert_expression(p):
 	'expression : invert expression'
 	p[0] = node.Invert(p[2])
 
-def p_boolexp(p):
-	'''boolexp : expression lt expression
-		| expression gt expression
-		| expression lequal expression
-		| expression gequal expression
-		| expression isnotequal expression
-		| expression isequal expression'''
-	p[0] = node.BoolExp(p[1], p[2], p[3], None)
+#def p_boolexp(p):
+#	'''boolexp : expression lt expression
+#		| expression gt expression
+#		| expression lequal expression
+#		| expression gequal expression
+#		| expression isnotequal expression
+#		| expression isequal expression'''
+#	p[0] = node.BoolExp(p[1], p[2], p[3], None)
 
 
 
@@ -609,16 +610,20 @@ def p_binary_operators(p):
 		p[0] = node.Bitor(p[1],p[3])
 	elif p[2] == '^':
 		p[0] = node.Bitxor(p[1],p[3])
-	elif p[2] == '==' or p[2] == '>' or p[2] == '<' or
+	elif p[2] == '==' or p[2] == '>' or p[2] == '<' or p[2] == '<=' or p[2] == '>=' or p[2] == '!=':
+		p[0] = node.BoolExp(p[1], p[2], p[3], None)
+	elif p[2] == 'and' or p[2] == 'or':
+		p[0] = node.BoolExp(p[1], p[2], p[3], None)
+	
 
 
 def p_if(p):
-	'ifstmt : if boolexp colon newline indent statement_list dedent'
+	'ifstmt : if expression colon newline indent statement_list dedent'
 	p[2].flag = "check"
 	p[0] = node.IfNode(p[2],p[6],[])
 
 def p_if_with_else(p):
-	'ifstmt : if boolexp colon newline indent statement_list dedent elsestmt'
+	'ifstmt : if expression colon newline indent statement_list dedent elsestmt'
 	p[2].flag = "check"
 	p[0] = node.IfNode(p[2],p[6],p[8])
 
@@ -627,17 +632,17 @@ def p_else(p):
 	p[0] = p[5]
 
 def p_elif(p):
-	'elsestmt : elif boolexp colon newline indent statement_list dedent'
+	'elsestmt : elif expression colon newline indent statement_list dedent'
 	p[2].flag = "check"
 	p[0] = node.IfNode(p[2], p[6], [])
 
 def p_elif_with_else(p):
-	'elsestmt : elif boolexp colon newline indent statement_list dedent elsestmt'
+	'elsestmt : elif expression colon newline indent statement_list dedent elsestmt'
 	p[2].flag = "check"
 	p[0] = node.IfNode(p[2], p[6], p[8])
 
 def p_while(p):
-	'whilestmt : while boolexp colon newline indent statement_list dedent'
+	'whilestmt : while expression colon newline indent statement_list dedent'
 	p[2].flag = "check"
 	p[0] = node.WhileNode(p[2], p[6])
 
@@ -666,12 +671,10 @@ def p_const_rule(t):
 
 def p_assname(t):
 	'assname : identifier'
-	print t[1]
 	t[0] = node.AssName(t[1])
 
 def p_name(t):
 	'name : identifier'
-	print t[1]
 	t[0] = node.Name(t[1])
 
 
@@ -707,7 +710,7 @@ def getAST():
 	file = sys.argv[1]
 	stream = open(file)
 	contents = stream.read()
-	lex.runmain(lexer)
+	#lex.runmain(lexer)
 	ast=yacc.parse(contents, lexer)
 	return ast
 

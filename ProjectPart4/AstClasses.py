@@ -339,6 +339,23 @@ class Label:
 	def __str__(self):
 		return "Label(%s)" % (self.name)
 
+class Special:
+	def __init__(self,str,s):
+		self.str1 =  str
+		self.str2 = s
+	def __repr__(self):
+		return "Special(%s,%s)" % (self.str1, self.str2)
+	def __str__(self):
+		return "Special(%s,%s)" % (self.str1, self.str2)
+
+class ZSpecial:
+	def __init__(self,str):
+		self.str =  str
+	def __repr__(self):
+		return "ZSpecial(%s)" % (self.str)
+	def __str__(self):
+		return "ZSpecial(%s)" % (self.str)
+
 
 
 

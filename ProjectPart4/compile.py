@@ -21,6 +21,8 @@ labelnum = 0
 flatStmts = []
 variables = []
 
+
+
 endLab = "END"
 
 #gets creates an ast from the contenst of a file name given as an argument
@@ -33,27 +35,24 @@ def compile():
 	filePath = sys.argv[1]
 	#abstract syntax tree for the contents of the file
 	ast=a3test.getAST()
-	print ast
-	print " "
+
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
-	
+
 
 	#this is where the tagging happens
 	boxingPass(ast);
-	
-	print ast
+
+
 	
 	#this is where the flattening happens
 	flatten(ast)
 	
-	for s in flatStmts:
-		print s
-	
 
-	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
-	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
-	print 'define i32 @input() nounwind uwtable ssp { '
+
+#	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
+#	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
+#	print 'define i32 @input() nounwind uwtable ssp { '
 	
 	
 	print 'declare i32 @input() nounwind uwtable ssp '
@@ -147,18 +146,50 @@ def boxingPass(n):
 		
 			
 	elif isinstance(n,BoolExp):
-		#a boolean expression should untag each side of the boolean operator and then
-		#tag the result
-		tempL = boxingPass(n.left)
-		tempR = boxingPass(n.right)
-		#untag all by shifting left 2 (booleans treated as integers in this case)
-		n.left = ConvertToInt(tempL)
-		n.right = ConvertToInt(tempR)
-		#to Tag, create a Tag object with bool flag because we tag ints differently than
-		#booleans. The actual tagging occurs at runtime
-		#the result will always be a boolean
-		box = Tag(n, "bool")
-		return box
+		
+		
+		if (n.op == "and") or (n.op == "or"):
+			#a boolean expression should untag each side of the boolean operator and then
+			#tag the result
+			tempL = boxingPass(n.left)
+			tempR = boxingPass(n.right)
+			#untag all by shifting left 2 (booleans treated as integers in this case)
+			n.left = ConvertToInt(tempL)
+			n.right = ConvertToInt(tempR)
+			#to Tag, create a Tag object with bool flag because we tag ints differently than
+			#booleans. The actual tagging occurs at runtime
+			#the result will always be a boolean
+			box = Tag(n, "int")
+			return box
+				
+		else:
+			#a boolean expression should untag each side of the boolean operator and then
+			#tag the result
+			tempL = boxingPass(n.left)
+			tempR = boxingPass(n.right)
+			#untag all by shifting left 2 (booleans treated as integers in this case)
+			n.left = ConvertToInt(tempL)
+			n.right = ConvertToInt(tempR)
+			#to Tag, create a Tag object with bool flag because we tag ints differently than
+			#booleans. The actual tagging occurs at runtime
+			#the result will always be a boolean
+			box = Tag(n, "bool")
+			return box
+
+	elif isinstance(n, AugAssign):
+		expression = boxingPass(n.exp)
+		n.exp = expression
+		return n
+		
+	elif isinstance(n, UnarySub) or isinstance(n,UnaryAdd):
+		expression = boxingPass(n.expr)
+		n.expr = expression
+		return n
+
+	elif isinstance(n, Invert):
+		n.expr = boxingPass(n.expr)
+		return n
+
 				
 
 	elif isinstance(n, Bool):
@@ -204,7 +235,6 @@ def boxingPass(n):
 		return n
 
 	elif isinstance(n, Printnl):
-		print "yay got here!"
 		if (len(n.nodes) != 1):
 			sys.exit('Print accepts a single integer value')
 		n.nodes[0] = boxingPass(n.nodes[0])
@@ -254,7 +284,6 @@ def flattenStmt(n):
 		flattenExp(n.expr, genSym())
 
 	elif isinstance(n, Printnl):
-		print "in the print!"
 		if (len(n.nodes) != 1):
 			sys.exit('Print accepts a single integer value')
 		a = genSym()
@@ -264,51 +293,7 @@ def flattenStmt(n):
 		
 		t1 = Name(flattenExp(n.nodes[0], a))
 		n.nodes[0] = t1;
-#		print t1
-#		f = genLabel("F")
-#		t = genLabel("T")
-#		p = genLabel("P")
-#		
-#		bitcheck = flattenExp(boxingPass(Bitand(t1, Const(3))), genSym())
-#		print "bitcheck: ",bitcheck
-#		variables.append(bitcheck)
-#		boolcheck = flattenExp(boxingPass(BoolExp(Name(bitcheck), "==", Const(0), "check")),genSym())
-#		print "boolcheck: ",boolcheck
-#		
-#		intBoolIf = IfNode(boolcheck, GoTo(f), GoTo(t))
-#		flatStmts.append(intBoolIf)
-#
-#		l = Label(t)
-#		flatStmts.append(l)
-#		
-#		intcon = ConvertToInt(t1)
-#		n.nodes[0] = intcon
-#		
-#		ge = genLabel("END")
-#		flatStmts.append(GoTo(p))
-#
-#		lf = Label(f)
-#		flatStmts.append(lf)
-#		
-#		boolcon = flattenExp(ConvertToInt(t1),genSym())
-#		variables.append(boolcon)
-#		boolcheck2 = flattenExp(BoolExp(Name(boolcon), "==", Const(0), "check"),genSym())
-#		f2 = genLabel("F")
-#		t2 = genLabel("T")
-#		booltfIf = IfNode(boolcheck2, GoTo(f2), GoTo(t2))
-#		flatStmts.append(booltfIf)
-#
-#		flatStmts.append(Label(t2))
-#		n.nodes[0] = "False"
-#
-#		flatStmts.append(GoTo(p))
-#
-#		flatStmts.append(Label(f2))
-#		n.nodes[0] = "True"
-#
-#		flatStmts.append(GoTo(p))
-#
-#		flatStmts.append(Label(p))
+
 		
 		temp = Assign(AssName(b), n)
 		flatStmts.append(temp)
@@ -321,14 +306,66 @@ def flattenStmt(n):
 		if isinstance(n.exp, Name):
 			a = genSymFromVar(n.exp.name)
 		flattened_expr = flattenExp(n.exp, a)
-		#t1 = Name(flattened_expr)
-		n.exp = Name(a)
 		x = genSymFromVar(n.name.name)
-		if n.name.name not in variables:
-			sys.exit('ERROR! Use of undefined variable '+n.name.name)
-		n.name = Name(x)
-		temp = Assign(AssName(x),n)
-		flatStmts.append(temp)
+		variables.append(x)
+		variables.append(flattened_expr)
+			
+		if(n.op == "+="):
+
+			flattenExp(boxingPass(Add(Name(x), Name(flattened_expr))), x)
+
+		elif(n.op == "-="):
+
+			flattenExp(boxingPass(Sub(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == "*="):
+
+			flattenExp(boxingPass(Mul(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == "/="):
+
+			flattenExp(boxingPass(Div(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == "**="):
+
+			flattenExp(boxingPass(Power(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == "%="):
+
+			flattenExp(boxingPass(Mod(Name(x), Name(flattened_expr))), x)
+		
+		elif(n.op == "<<="):
+
+			flattenExp(boxingPass(LeftShift(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == ">>="):
+
+			flattenExp(boxingPass(RightShift(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == "&="):
+	
+			flattenExp(Bitand(LeftShift(Name(x), Name(flattened_expr))), x)
+		
+		elif(n.op == "|="):
+
+			flattenExp(boxingPass(Bitor(Name(x), Name(flattened_expr))), x)
+
+		elif(n.op == "^="):
+	
+			flattenExp(boxingPass(Bitxor(Name(x), Name(flattened_expr))), x)
+				
+		elif(n.op == "//="):
+
+			flattenExp(boxingPass(FloorDiv(Name(x), Name(flattened_expr))), x)
+
+
+	#n.exp = Name(a)
+			
+#			if n.name.name not in variables:
+#				sys.exit('ERROR! Use of undefined variable '+n.name.name)
+#			n.name = Name(x)
+#			temp = Assign(AssName(x),add)
+#			flatStmts.append(temp)
 
 	elif isinstance(n, IfNode):
 		#we will modify the IfNode to form first line of the example in the notes:
@@ -471,7 +508,7 @@ def flattenExp(n, x):
 		return x
 	
 
-	elif isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv) or isinstance(n, BoolExp):
+	elif isinstance(n,Add) or isinstance(n,Div) or isinstance(n,Sub) or isinstance(n,Mul) or isinstance(n, LeftShift) or isinstance(n, RightShift) or isinstance(n,Power) or isinstance(n, Mod) or isinstance(n, FloorDiv):
 		#generate symbols a and b 
 		a = genSym()
 		b = genSym()
@@ -485,6 +522,88 @@ def flattenExp(n, x):
 		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 		return x
+
+	elif isinstance(n,BoolExp):
+		
+		
+		if (n.op != 'and') and (n.op != 'or'):
+			#generate symbols a and b
+			a = genSym()
+			b = genSym()
+			#use them to assign to constants (or if Names are the operands, will just return variable)
+			leftStmt = flattenExp(n.left, a )
+			rightStmt = flattenExp(n.right, b)
+			#now we use the same operator object n and just change its left and right values
+			n.left = Name(leftStmt)
+			n.right = Name(rightStmt)
+			#assign the add operation n to the varialbe x and append to the statements list
+			temp = Assign(AssName(x),n)
+			flatStmts.append(temp)
+			return x
+		
+		elif n.op == 'and':
+			#generate symbols a and b
+			a = genSym()
+
+			variables.append(a)
+			b = genSym()
+			variables.append(b)
+			#use them to assign to constants (or if Names are the operands, will just return variable)
+			leftStmt = flattenExp(n.left, a )
+			rightStmt = flattenExp(n.right, b)
+			#now we use the same operator object n and just change its left and right values
+			n.left = Name(leftStmt)
+			n.right = Name(rightStmt)
+			q = genSym()
+			variables.append(q)
+			lCheck = flattenExp(BoolExp(n.left,"!=", Const(0),"check"), q)
+			c = genSym()
+			templ = Assign(AssName(c),Name(lCheck))
+			flatStmts.append(templ)
+			f = genLabel("F")
+			t = genLabel("T")
+			leftIf = IfNode(Name(c), GoTo(f), GoTo(t))
+			flatStmts.append(leftIf)
+			
+			labt = Label(t)
+			flatStmts.append(labt)
+			z = genSym()
+			variables.append(z)
+			rCheck = flattenExp(BoolExp(n.right,"!=", Const(0),"check"), z)
+			d = genSym()
+			tempr = Assign(AssName(d), Name(rCheck))
+			flatStmts.append(tempr)
+			
+			gf = GoTo(f)
+			flatStmts.append(gf)
+			
+			flatStmts.append(Label(f))
+			
+			e = genSym()
+			
+			ts = e+" = phi i1 [ false, %0 ], [ "
+			ts2 = ", %"+t+" ]"
+			sp = Special(ts, ts2)
+			flatStmts.append(sp)
+
+			g = genSym()
+			tz = g+" = zext i1 "+e+" to i32"
+			sp2 = ZSpecial(tz)
+			flatStmts.append(sp2)
+			y = genSym()
+			aloc =  "	 "+y + " = alloca i32, align 4"
+			alocSpecial = ZSpecial(aloc)
+			flatStmts.append(alocSpecial)
+			more = "    store i32 "+g+", i32* "+y+", align 4"
+			morespecial = ZSpecial(more)
+			flatStmts.append(morespecial)
+
+			
+			#assign the add operation n to the varialbe x and append to the statements list
+#			temp = Assign(AssName(x),n)
+#			flatStmts.append(temp)
+			return y
+			
 
 
 	
@@ -533,13 +652,20 @@ def flattenExp(n, x):
 
 	elif isinstance(n, Invert):
 		a = genSym()
+		variables.append(a)
+
+		b = genSym()
+		variables.append(b)
 		flattened_expr = flattenExp(n.expr, a)
 		t1 = Name(flattened_expr)
-		n.expr = t1
-		temp = Assign(AssName(x),n)
-		flatStmts.append(temp)
+#		n.expr = t1
+#		temp = Assign(AssName(x),n)
+#		flatStmts.append(temp)
+#		return x
+		
+		flattenExp(boxingPass(Add(t1,Const(1))),b)
+		flattenExp(boxingPass(Sub(Const(0),Name(b))),x)
 		return x
-
 
 	elif isinstance(n, CallFunc):
 		lst = []
@@ -618,6 +744,12 @@ def astToLLVM(ast, x):
 		#we need to go deeper
 		else:
 			astToLLVM(ast.expr, ast.name.name)
+	
+	elif isinstance(ast, Special):
+		print ast.str1+current_ifcheck+ast.str2
+				
+	elif isinstance(ast, ZSpecial):
+		print ast.str
 	
 	elif isinstance(ast, Const):
 		return str(ast.value)
@@ -710,7 +842,7 @@ def astToLLVM(ast, x):
 		return codegen_callfunc(ast, x)
 
 	else:
-		print ast
+		print "I am unrecognized:",ast
 		sys.exit('io sono an unrecognized AST')
 
 
@@ -787,7 +919,6 @@ def codegen_print(ast,x):
 #	astToLLVM(RightShift(Name(e), Name(a)), x)
 	a = genSym()
 	b = genSym()
-	print ast
 	output_load(a,ast.nodes[0].name)
 	output_call(b,"i32","print_int_nl","i32"+a,"")
 
@@ -839,10 +970,13 @@ def codegen_boolExp(ast,x, flag):
 
 
 	else:
+		
 
 		print "	 "+d+" = zext i1 "+c+" to i32"
 		print " " 
 		output_store(d,x)
+
+
 
 def codegen_if(ast,x):
 	global current_ifcheck
