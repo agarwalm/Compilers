@@ -372,6 +372,7 @@ def flattenStmt(n):
 #			flatStmts.append(temp)
 
 	elif isinstance(n, IfNode):
+		print "io sono", n
 		#we will modify the IfNode to form first line of the example in the notes:
 		#If not cond goto F:
 		n.expr = flattenExp(n.expr, genSym())
@@ -431,7 +432,7 @@ def flattenStmt(n):
 			endLabel = Label(e)
 			flatStmts.append(endLabel)
 				
-		return t,f
+
 
 
 			
@@ -546,71 +547,44 @@ def flattenExp(n, x):
 			return x
 		
 		elif n.op == 'and':
-			#generate symbols a and b
-			a = genSym()
+			
+			tempright = n.right
+			n.right = ConvertToInt(Tag(Const(0), "int"))
+			n.op = "!="
+			n.flag = "check"
+			var = genSymFromVar(x)
+			print var
+			variables.append(var)
+			r = Assign(AssName(var), tempright.node.node)
+			
+			l = Assign(AssName(var), n.left.node.node)
+			print l
+			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l] ))
 
-			variables.append(a)
-			b = genSym()
-			variables.append(b)
-			#use them to assign to constants (or if Names are the operands, will just return variable)
-			leftStmt = flattenExp(n.left, a )
-			rightStmt = flattenExp(n.right, b)
-			#now we use the same operator object n and just change its left and right values
-			n.left = Name(leftStmt)
-			n.right = Name(rightStmt)
-			q = genSym()
-			variables.append(q)
-			lCheck = flattenExp(BoolExp(n.left,"!=", Const(0),"check"), q)
-			c = genSym()
-			templ = Assign(AssName(c),Name(lCheck))
-			flatStmts.append(templ)
-			f = genLabel("F")
-			t = genLabel("T")
-			leftIf = IfNode(Name(c), GoTo(f), GoTo(t))
-			flatStmts.append(leftIf)
-			
-			labt = Label(t)
-			flatStmts.append(labt)
-			z = genSym()
-			variables.append(z)
-			rCheck = flattenExp(BoolExp(n.right,"!=", Const(0),"check"), z)
-			d = genSym()
-			tempr = Assign(AssName(d), Name(rCheck))
-			flatStmts.append(tempr)
-			
-			gf = GoTo(f)
-			flatStmts.append(gf)
-			
-			flatStmts.append(Label(f))
-			
-			e = genSym()
-			
-			ts = e+" = phi i1 [ false, %0 ], [ "
-			ts2 = ", %"+t+" ]"
-			sp = Special(ts, ts2)
-			flatStmts.append(sp)
+			print andIf
+			return x
 
-			g = genSym()
-			tz = g+" = zext i1 "+e+" to i32"
-			sp2 = ZSpecial(tz)
-			flatStmts.append(sp2)
-			y = genSym()
-			aloc =  "	 "+y + " = alloca i32, align 4"
-			alocSpecial = ZSpecial(aloc)
-			flatStmts.append(alocSpecial)
-			more = "    store i32 "+g+", i32* "+y+", align 4"
-			morespecial = ZSpecial(more)
-			flatStmts.append(morespecial)
-
+		elif n.op == 'or':
 			
-			#assign the add operation n to the varialbe x and append to the statements list
-#			temp = Assign(AssName(x),n)
-#			flatStmts.append(temp)
-			return y
+			tempright = n.right
+			n.right = ConvertToInt(Tag(Const(0), "int"))
+			n.op = "!="
+			n.flag = "check"
+			var = genSymFromVar(x)
+			print var
+			variables.append(var)
+			r = Assign(AssName(var), tempright.node.node)
 			
+			l = Assign(AssName(var), n.left.node.node)
+			print l
+			andIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r] ))
+			
+			print andIf
+			
+			return x
 
+		
 
-	
 
 	elif isinstance(n,UnarySub) or isinstance(n, UnaryAdd):
 		#tempExpr will take the value of the name assigned to it
@@ -684,6 +658,7 @@ def flattenExp(n, x):
 		
 	
 	else:
+		print n
 		sys.exit('I am an unrecognized AST')
 
 
@@ -856,11 +831,17 @@ def astToLLVM(ast, x):
 
 
 def codegen_assign_const(ast,x):
+	print"\n ; storing ", ast.expr.value," in ",x,"\n"
 	output_store(str(ast.expr.value),x)
 
 def codegen_assign_bool(ast,x):
+	print"\n ; assigning boolean  ", ast.expr," to ",x,"\n"
+	
 	val = astToLLVM(ast.expr,x)
 	if ast.expr.flag == "check":
+		
+		print"\n ; boolean,  ", ast.expr," is a check in an IfNode \n"
+		
 		global current_ifcheck
 		a = genSym();
 		print "	 "+a + " = alloca i1, align 4"
@@ -874,6 +855,9 @@ def codegen_assign_bool(ast,x):
 
 
 def codegen_tag(ast,x):
+	
+	print"\n ; Tagging ",x,"\n"
+	
 	c = genSym()
 	#	print "	 "+c + " = alloca i32, align 4"
 	if isinstance(ast.node, Const):
@@ -895,11 +879,18 @@ def codegen_tag(ast,x):
 	if isinstance(ast.node, Bool):
 		d = genSym()
 		output_store(str(ast.node.value),x)
+		
 		if ast.node.flag == "check":
+			print"\n ; boolean,  ", ast.node," is a check in an IfNode \n"
+			p = genSym()
+			e = genSym()
+			print "	 "+p + " = alloca i32, align 4"
+			output_load(e,x)
+			output_store(e,p)
 			global current_ifcheck
-			current_ifcheck = x
+			current_ifcheck = p
 
-		output_store(d,x)
+		#output_store(d,x)
 		#	output_store(c,x)
 		a = genSym();
 		print "	 "+a + " = alloca i32, align 4"
@@ -913,16 +904,16 @@ def codegen_tag(ast,x):
 			print "	 "+b + " = alloca i32, align 4"
 			output_store(str(1),b)
 			astToLLVM(Bitor(Name(x), Name(b)), x)
-#		if ast.node.flag == "check":
-#			q = genSym()
-#			k = genSym()
-#			
-#			print "	 "+k + " = alloca i1, align 4"
-#			output_store(k,q)
-#			print "	 "+q+" = trunc i32 "+x+" to i1"
-#			output_load(q,k)
-#			current_ifcheck = k
-#			print " "
+
+
+		if ast.node.flag == "check":
+			q = genSym()
+			k = genSym()
+			
+			output_load(q,current_ifcheck)
+			print "	 "+k+" = trunc i32 "+q+" to i1"
+			current_ifcheck = k
+			print " "
 	
 	else:
 
@@ -942,18 +933,7 @@ def codegen_tag(ast,x):
 			astToLLVM(Bitor(Name(x), Name(b)), x)
 
 def codegen_print(ast,x):
-#	a = genSym();
-#	print "	 "+a + " = alloca i32, align 4"
-#	output_store(str(2),a)
-#	if ast.nodes[0] == "True":
-#		print genSym()+" = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([5 x i8]* @.str1, i32 0, i32 0))"
-#	elif ast.nodes[0] == "False":
-#			print genSym()+"= call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8]* @.str1, i32 0, i32 0))"
-#	
-#	else:
-	#	e = astToLLVM(ast.nodes[0], x)
-	#unbox int
-#	astToLLVM(RightShift(Name(e), Name(a)), x)
+	print"\n ; generating code to print,  ", x ," \n"
 	a = genSym()
 	b = genSym()
 	output_load(a,ast.nodes[0].name)
@@ -968,6 +948,7 @@ def codegen_tobool(ast,x):
 	astToLLVM(RightShift(Name(astToLLVM(ast.node, genSym())), Name(a)), x)
 
 def codegen_toint(ast,x):
+	print"\n ; Untagging,  ", ast.node ," \n"
 	a = genSym();
 	b = genSym();
 	print " "
@@ -982,6 +963,9 @@ def codegen_assign_name(ast):
 	output_store(a, ast.name.name)
 
 def codegen_boolExp(ast,x, flag):
+	
+	print"\n ; generating code for boolean expression,  ", ast ," \n"
+	
 	a = genSym()
 	b = genSym()
 	output_load(a, astToLLVM(ast.left,x))
@@ -1016,6 +1000,9 @@ def codegen_boolExp(ast,x, flag):
 
 
 def codegen_if(ast,x):
+	
+	print"\n ; generating code for ,  ", ast ," \n"
+	
 	global current_ifcheck
 	print "   br i1 "+current_ifcheck+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
 	print " "
@@ -1024,10 +1011,13 @@ def codegen_if(ast,x):
 def codegen_label(ast):
 #	if ast.name[0:-1] == "END":
 #		print "    br label %"+ast.name
+	print " "
 	print ast.name+":"
+	print " "
 
 
 def codegen_binop(ast,x, op):
+	print"\n ; generating code for binry op ,  ", ast ," \n"
 	#must create temporary variables for the load operations
 	a = genSym()
 	b = genSym()
@@ -1040,6 +1030,9 @@ def codegen_binop(ast,x, op):
 
 
 def codegen_unary(ast,x, op):
+	
+	print"\n ; generating code unary op ,  ", ast ," \n"
+	
 	a = genSym()
 	output_load(a, astToLLVM(ast.expr,x))
 	c = genSym()
@@ -1050,6 +1043,9 @@ def codegen_unary(ast,x, op):
 	output_store(c,x)
 
 def codegen_invert(ast, x):
+	
+	print"\n ; generating code for invert ,  ", ast ," \n"
+	
 	a = genSym()
 	output_load(a, astToLLVM(ast.expr, x))
 	c = genSym()
@@ -1059,6 +1055,9 @@ def codegen_invert(ast, x):
 	output_store(d, x)
 
 def codegen_floordiv(ast,x):
+	
+	print"\n ; generating code for floordiv ,  ", ast ," \n"
+	
 	a = genSym()
 	b = genSym()
 	c = genSym()
@@ -1074,6 +1073,9 @@ def codegen_floordiv(ast,x):
 	output_store(e, x)
 
 def codegen_power(ast,x):
+	
+	print"\n ; generating code for power ,  ", ast ," \n"
+	
 	a = genSym()
 	b = genSym()
 	c = genSym()
@@ -1094,6 +1096,8 @@ def codegen_power(ast,x):
 
 
 def  codegen_augassign(ast, x, op):
+	
+	print"\n ; generating code for augassign ,  ", ast ," \n"
 	
 	e = astToLLVM(ast.exp, x)
 	llvmop = None
@@ -1130,6 +1134,9 @@ def  codegen_augassign(ast, x, op):
 	output_store(c,x)
 
 def codegen_callfunc(ast,x):
+	
+	print"\n ; calling the function ,  "+ ast.node.name +" \n"
+	
 	a = genSym()
 	output_call(a,"i32",ast.node.name,"","")
 	output_store(a,x)
