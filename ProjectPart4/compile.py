@@ -35,6 +35,7 @@ def compile():
 	filePath = sys.argv[1]
 	#abstract syntax tree for the contents of the file
 	ast=a3test.getAST()
+	print ast
 
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
@@ -43,10 +44,13 @@ def compile():
 	#this is where the tagging happens
 	boxingPass(ast);
 
-
+	print ast
 	
 	#this is where the flattening happens
 	flatten(ast)
+	
+	for s in flatStmts:
+		print s
 	
 
 
@@ -872,7 +876,7 @@ def codegen_assign_bool(ast,x):
 def codegen_tag(ast,x):
 	c = genSym()
 	#	print "	 "+c + " = alloca i32, align 4"
-	if isinstance(ast.node, Const) or isinstance(ast.node, Bool):
+	if isinstance(ast.node, Const):
 		output_store(str(ast.node.value),x)
 		#	output_store(c,x)
 		a = genSym();
@@ -887,6 +891,39 @@ def codegen_tag(ast,x):
 			print "	 "+b + " = alloca i32, align 4"
 			output_store(str(1),b)
 			astToLLVM(Bitor(Name(x), Name(b)), x)
+	
+	if isinstance(ast.node, Bool):
+		d = genSym()
+		output_store(str(ast.node.value),x)
+		if ast.node.flag == "check":
+			global current_ifcheck
+			current_ifcheck = x
+
+		output_store(d,x)
+		#	output_store(c,x)
+		a = genSym();
+		print "	 "+a + " = alloca i32, align 4"
+		output_store(str(2),a)
+		
+		astToLLVM(LeftShift(Name(x), Name(a)), x)
+		if ast.flag == "int":
+			return
+		elif ast.flag == "bool":
+			b = genSym()
+			print "	 "+b + " = alloca i32, align 4"
+			output_store(str(1),b)
+			astToLLVM(Bitor(Name(x), Name(b)), x)
+#		if ast.node.flag == "check":
+#			q = genSym()
+#			k = genSym()
+#			
+#			print "	 "+k + " = alloca i1, align 4"
+#			output_store(k,q)
+#			print "	 "+q+" = trunc i32 "+x+" to i1"
+#			output_load(q,k)
+#			current_ifcheck = k
+#			print " "
+	
 	else:
 
 		d = astToLLVM(ast.node,x)
