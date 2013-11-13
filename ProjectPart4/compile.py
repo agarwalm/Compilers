@@ -21,7 +21,7 @@ labelnum = 0
 flatStmts = []
 variables = []
 
-
+nested_if = False
 
 endLab = "END"
 
@@ -35,7 +35,8 @@ def compile():
 	filePath = sys.argv[1]
 	#abstract syntax tree for the contents of the file
 	ast=a3test.getAST()
-	print ast
+	print "; ",ast
+	print " "
 
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
@@ -44,13 +45,16 @@ def compile():
 	#this is where the tagging happens
 	boxingPass(ast);
 
-	print ast
+	print "; ",ast
+	print " "
 	
 	#this is where the flattening happens
 	flatten(ast)
 	
 	for s in flatStmts:
-		print s
+		print "; ",s
+	
+	print " "
 	
 
 
@@ -370,9 +374,10 @@ def flattenStmt(n):
 #			n.name = Name(x)
 #			temp = Assign(AssName(x),add)
 #			flatStmts.append(temp)
+				
+
 
 	elif isinstance(n, IfNode):
-		print "io sono", n
 		#we will modify the IfNode to form first line of the example in the notes:
 		#If not cond goto F:
 		n.expr = flattenExp(n.expr, genSym())
@@ -397,7 +402,7 @@ def flattenStmt(n):
 		if isinstance(elsestmts, IfNode):
 			flatStmts.append(GoTo(e))
 			flatStmts.append(Label(f))
-			a,b = flattenStmt(elsestmts)
+			flattenStmt(elsestmts)
 
 
 			
@@ -414,23 +419,33 @@ def flattenStmt(n):
 				n.alt = gotof
 				#flatten the statements from the original false block
 				for i in range(0, len(elsestmts)):
+					if isinstance(elsestmts[i], IfNode):
+						global nested_if
+						nested_if = True;
 					flattenStmt(elsestmts[i])
 				
-				flatStmts.append(gotoe)
+			#flatStmts.append(gotoe)
 				
 				
 
 			
 			else:
 				tfIf.nodes = GoTo(e)
+			
+			global nested_if
+			if nested_if == False:
+			
 				flatStmts.append(GoTo(e))
 
-			endLab = genLabel("END")
+				endLab = genLabel("END")
 
-			
-			#end label for the end of the if statement (where you jump to if the condition is true)
-			endLabel = Label(e)
-			flatStmts.append(endLabel)
+				
+				#end label for the end of the if statement (where you jump to if the condition is true)
+				endLabel = Label(e)
+				flatStmts.append(endLabel)
+				nested_if = False
+			else:
+				nested_if = False;
 				
 
 
