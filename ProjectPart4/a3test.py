@@ -620,12 +620,12 @@ def p_binary_operators(p):
 def p_if(p):
 	'ifstmt : if expression colon newline indent statement_list dedent'
 	p[2].flag = "check"
-	p[0] = node.IfNode(p[2],p[6],[])
+	p[0] = node.IfNode(p[2],p[6],[], "")
 
 def p_if_with_else(p):
 	'ifstmt : if expression colon newline indent statement_list dedent elsestmt'
 	p[2].flag = "check"
-	p[0] = node.IfNode(p[2],p[6],p[8])
+	p[0] = node.IfNode(p[2],p[6],p[8], "")
 
 def p_else(p):
 	'elsestmt : else colon newline indent statement_list dedent'
@@ -634,12 +634,12 @@ def p_else(p):
 def p_elif(p):
 	'elsestmt : elif expression colon newline indent statement_list dedent'
 	p[2].flag = "check"
-	p[0] = node.IfNode(p[2], p[6], [])
+	p[0] = node.IfNode(p[2], p[6], [], "")
 
 def p_elif_with_else(p):
 	'elsestmt : elif expression colon newline indent statement_list dedent elsestmt'
 	p[2].flag = "check"
-	p[0] = node.IfNode(p[2], p[6], p[8])
+	p[0] = node.IfNode(p[2], p[6], p[8], "")
 
 def p_while(p):
 	'whilestmt : while expression colon newline indent statement_list dedent'

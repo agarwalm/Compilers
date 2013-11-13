@@ -22,6 +22,10 @@ flatStmts = []
 variables = []
 
 nested_if = False
+or_if = False
+currentEnd = None
+nested_or = False
+endCount = 0;
 
 endLab = "END"
 
@@ -162,12 +166,12 @@ def boxingPass(n):
 			tempL = boxingPass(n.left)
 			tempR = boxingPass(n.right)
 			#untag all by shifting left 2 (booleans treated as integers in this case)
-			n.left = ConvertToInt(tempL)
-			n.right = ConvertToInt(tempR)
+			n.left = tempL
+			n.right = tempR
 			#to Tag, create a Tag object with bool flag because we tag ints differently than
 			#booleans. The actual tagging occurs at runtime
 			#the result will always be a boolean
-			box = Tag(n, "int")
+			box = n
 			return box
 				
 		else:
@@ -266,7 +270,9 @@ def flatten(n):
 		flatten(n.nodes)
 	#iterate through all of the statement nodes 
 	elif isinstance(n, Stmt):
+		global if_or
 		for x in n.nodes:
+			if_or = False
 			flattenStmt(x)
 
 def flattenStmt(n):
@@ -279,11 +285,11 @@ def flattenStmt(n):
 		if isinstance(n.expr, Name):
 			x = genSymFromVar(n.name.name)
 			temp = Assign(AssName(x),Name(flattenExp(n.expr,genSym())))
-			variables.append(n.name.name)
+			variables.append(x)
 			flatStmts.append(temp)
 			
 		else:
-			variables.append(n.name.name)
+			variables.append(genSymFromVar(n.name.name))
 			flattenExp(n.expr, genSymFromVar(n.name.name))
 		
 	#if you have a discard, then generate a variable to assign
@@ -387,7 +393,7 @@ def flattenStmt(n):
 		nodes = n.nodes
 		elsestmts = n.alt
 		
-		tfIf = IfNode(n.expr, gotof, GoTo(t))
+		tfIf = IfNode(n.expr, gotof, GoTo(t), "")
 		
 		flatStmts.append(tfIf)
 		flatStmts.append(Label(t))
@@ -433,7 +439,9 @@ def flattenStmt(n):
 				tfIf.nodes = GoTo(e)
 			
 			global nested_if
-			if nested_if == False:
+			global if_or
+			if nested_if == False and n.flag != "or":
+				print "; don't print end!\n"
 			
 				flatStmts.append(GoTo(e))
 
@@ -445,7 +453,10 @@ def flattenStmt(n):
 				flatStmts.append(endLabel)
 				nested_if = False
 			else:
-				nested_if = False;
+				nested_if = False
+
+				
+				
 				
 
 
@@ -469,7 +480,7 @@ def flattenStmt(n):
 		bottomlabel = Label(b)
 		flatStmts.append(bottomlabel)
 		n.expr = flattenExp(n.expr, genSym())
-		ifcond = IfNode(n.expr, GoTo(end), GoTo(t))
+		ifcond = IfNode(n.expr, GoTo(end), GoTo(t), "")
 		flatStmts.append(ifcond)
 		flatStmts.append(GoTo(end))
 		flatStmts.append(Label(end))
@@ -478,11 +489,13 @@ def flattenStmt(n):
 		
 		
 	else:
+		print "; unrecognized: ", n
 		sys.exit('unrecognized AST')
 
 
 
 def flattenExp(n, x):
+	
 	#assign a constant to the given variable and append to list
 	if isinstance(n,Const):
 		if not isinstance(n.value, int):
@@ -493,7 +506,7 @@ def flattenExp(n, x):
 	#if we have a name, return a variable of the form %v
 	elif isinstance(n,Name):
 		a = genSymFromVar(n.name)
-		if n.name not in variables:
+		if n.name not in variables and genSymFromVar(n.name) not in variables:
 			sys.exit('ERROR! Use of undefined variable '+n.name)
 		return a
 
@@ -544,7 +557,7 @@ def flattenExp(n, x):
 		return x
 
 	elif isinstance(n,BoolExp):
-		
+		variables.append(genSymFromVar(x))
 		
 		if (n.op != 'and') and (n.op != 'or'):
 			#generate symbols a and b
@@ -562,39 +575,66 @@ def flattenExp(n, x):
 			return x
 		
 		elif n.op == 'and':
-			
+			d = genSym()
+			e = genSym()
 			tempright = n.right
+			templeft = n.left
 			n.right = ConvertToInt(Tag(Const(0), "int"))
+			n.left = ConvertToInt(n.left)
 			n.op = "!="
 			n.flag = "check"
 			var = genSymFromVar(x)
-			print var
 			variables.append(var)
-			r = Assign(AssName(var), tempright.node.node)
-			
-			l = Assign(AssName(var), n.left.node.node)
-			print l
-			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l] ))
+			a = genSym()
+			b = genSym()
+			print "; tr:",tempright
+			flattenExp(tempright, a)
+			print "; left:",templeft
+			flattenExp(templeft, b)
+			print "; got here!"
+			r = Assign(AssName(var), tempright)
+			variables.append(a)
 
-			print andIf
+			l = Assign(AssName(var), templeft)
+			variables.append(b)
+
+			g = genSym()
+			print "; blah"
+			print "; ", flatStmts
+			print "; ifnode: ", IfNode(Tag(n, "bool"), [r], [l], "and" )
+			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l], "and" ))
+			print "; rawr"
+			#flatStmts.append(andIf)
+
 			return x
+
+
 
 		elif n.op == 'or':
 			
+			t = n.left.node.node
+			r = n.right.node.node
+			#global if_or
+			#if_or = True;
+			
+			
 			tempright = n.right
 			n.right = ConvertToInt(Tag(Const(0), "int"))
 			n.op = "!="
 			n.flag = "check"
 			var = genSymFromVar(x)
-			print var
 			variables.append(var)
 			r = Assign(AssName(var), tempright.node.node)
 			
 			l = Assign(AssName(var), n.left.node.node)
-			print l
-			andIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r] ))
+			orIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r], "or" ))
 			
-			print andIf
+			e = specialEnd()
+			flatStmts.append(GoTo(e))
+			#end label for the end of the if statement (where you jump to if the condition is true)
+			endLabel = Label(e)
+			flatStmts.append(endLabel)
+			
 			
 			return x
 
@@ -673,6 +713,7 @@ def flattenExp(n, x):
 		
 	
 	else:
+		print flatStmts
 		print n
 		sys.exit('I am an unrecognized AST')
 
@@ -693,6 +734,16 @@ def genSym():
 	return name
 
 
+#make special END labels
+def specialEnd():
+	endCount +=1
+	global endLab
+	global endCount
+	e = endLab*endCount
+	endLab = genLabel("END")
+	return e
+	
+	
 
 #adds a % infront of a given variable name to generate
 #an llvm-friendly variable

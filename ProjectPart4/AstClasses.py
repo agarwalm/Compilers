@@ -248,14 +248,15 @@ class UnarySub:
 		return "UnarySub(%s)" % (self.expr)
 
 class IfNode:
-	def __init__(self,check,do,otherwise):
+	def __init__(self,check,do,otherwise, flag):
 		self.expr=check
 		self.nodes = do
 		self.alt = otherwise
+		self.flag = flag
 	def __repr__(self):
-		return "IfNode(%s,%s,%s)" % (self.expr, self.nodes, self.alt)
+		return "IfNode(%s,%s,%s,%s)" % (self.expr, self.nodes, self.alt, self.flag)
 	def __str__(self):
-		return "IfNode(%s,%s,%s)" % (self.expr, self.nodes, self.alt)
+		return "IfNode(%s,%s,%s,%s)" % (self.expr, self.nodes, self.alt, self.flag)
 
 class WhileNode:
 	def __init__(self,check,do):
