@@ -414,10 +414,15 @@ def t_main_comment(t):
 
 
 precedence = (
-			  ('nonassoc','print', 'lt', 'gt','isequal', 'isnotequal', 'lequal', 'gequal' ),
-			  ('left', 'or', 'xor', 'and'),
-			  ('left', 'lshift'),
-			  ('left', 'rshift'),
+			  ('nonassoc','print'),
+			  ('nonassoc', 'if', 'elif', 'else', 'while'),
+			  ('left', 'stror'),
+			  ('left', 'strand'),
+			  ('left','lt', 'gt','isequal', 'isnotequal', 'lequal', 'gequal', 'not' ),
+			  ('left', 'or'),
+			  ('left', 'xor'),
+			  ('left', 'and'),
+			  ('left', 'lshift', 'rshift'),
 			  ('left','plus','minus'),
 			  ('left', 'times', 'div', 'floordiv', 'modulo'),
 			  ('right', 'uadd', 'usub', 'invert'),

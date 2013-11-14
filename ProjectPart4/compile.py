@@ -612,22 +612,35 @@ def flattenExp(n, x):
 
 
 		elif n.op == 'or':
-			
-			t = n.left.node.node
-			r = n.right.node.node
+#			
+#			t = n.left.node.node
+#			r = n.right.node.node
 			#global if_or
 			#if_or = True;
 			
 			
 			tempright = n.right
+			templeft = n.left
 			n.right = ConvertToInt(Tag(Const(0), "int"))
+			n.left = ConvertToInt(n.left)
 			n.op = "!="
 			n.flag = "check"
 			var = genSymFromVar(x)
 			variables.append(var)
-			r = Assign(AssName(var), tempright.node.node)
 			
-			l = Assign(AssName(var), n.left.node.node)
+			a = genSym()
+			b = genSym()
+			
+			print "; tr:",tempright
+			flattenExp(tempright, a)
+			print "; left:",templeft
+			flattenExp(templeft, b)
+			print "; got here!"
+			
+			r = Assign(AssName(var), Name(a))
+			
+			l = Assign(AssName(var), Name(b))
+			
 			orIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r], "or" ))
 			
 			e = specialEnd()
@@ -635,6 +648,8 @@ def flattenExp(n, x):
 			#end label for the end of the if statement (where you jump to if the condition is true)
 			endLabel = Label(e)
 			flatStmts.append(endLabel)
+			global endCount
+			endCount = 0;
 			
 			
 			return x
