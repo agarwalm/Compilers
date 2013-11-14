@@ -213,7 +213,7 @@ def t_main_elif(t):
 	return t
 
 def t_main_isequal(t):
-	r'=='
+	r'\=\='
 	return t
 
 def t_main_gequal(t):
@@ -414,7 +414,7 @@ def t_main_comment(t):
 
 
 precedence = (
-			  ('nonassoc','print', 'lt', 'gt'),
+			  ('nonassoc','print', 'lt', 'gt','isequal', 'isnotequal', 'lequal', 'gequal' ),
 			  ('left', 'or', 'xor', 'and'),
 			  ('left', 'lshift'),
 			  ('left', 'rshift'),

@@ -517,6 +517,7 @@ def flattenExp(n, x):
 
 
 	elif isinstance(n, Tag) or isinstance(n,Untag) or isinstance(n, ConvertToBool) or isinstance(n, ConvertToInt):
+		variables.append(genSymFromVar(x))
 		if isinstance(n.node, Const):
 			temp = Assign(AssName(x), n)
 			flatStmts.append(temp)
@@ -592,10 +593,10 @@ def flattenExp(n, x):
 			print "; left:",templeft
 			flattenExp(templeft, b)
 			print "; got here!"
-			r = Assign(AssName(var), tempright)
+			r = Assign(AssName(var), Name(a))
 			variables.append(a)
 
-			l = Assign(AssName(var), templeft)
+			l = Assign(AssName(var), Name(b))
 			variables.append(b)
 
 			g = genSym()
