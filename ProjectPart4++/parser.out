@@ -2181,14 +2181,7 @@ state 37
     (54) expression -> expression . isnotequal expression
     (55) expression -> expression . isequal expression
 
-    strand          reduce using rule 34 (expression -> not expression .)
     stror           reduce using rule 34 (expression -> not expression .)
-    lt              reduce using rule 34 (expression -> not expression .)
-    gt              reduce using rule 34 (expression -> not expression .)
-    lequal          reduce using rule 34 (expression -> not expression .)
-    gequal          reduce using rule 34 (expression -> not expression .)
-    isnotequal      reduce using rule 34 (expression -> not expression .)
-    isequal         reduce using rule 34 (expression -> not expression .)
     newline         reduce using rule 34 (expression -> not expression .)
     print           reduce using rule 34 (expression -> not expression .)
     identifier      reduce using rule 34 (expression -> not expression .)
@@ -2218,6 +2211,13 @@ state 37
     and             shift and go to state 53
     or              shift and go to state 54
     xor             shift and go to state 61
+    strand          shift and go to state 72
+    lt              shift and go to state 63
+    gt              shift and go to state 66
+    lequal          shift and go to state 60
+    gequal          shift and go to state 58
+    isnotequal      shift and go to state 59
+    isequal         shift and go to state 68
 
   ! plus            [ reduce using rule 34 (expression -> not expression .) ]
   ! minus           [ reduce using rule 34 (expression -> not expression .) ]
@@ -2231,14 +2231,14 @@ state 37
   ! and             [ reduce using rule 34 (expression -> not expression .) ]
   ! or              [ reduce using rule 34 (expression -> not expression .) ]
   ! xor             [ reduce using rule 34 (expression -> not expression .) ]
-  ! strand          [ shift and go to state 72 ]
+  ! strand          [ reduce using rule 34 (expression -> not expression .) ]
+  ! lt              [ reduce using rule 34 (expression -> not expression .) ]
+  ! gt              [ reduce using rule 34 (expression -> not expression .) ]
+  ! lequal          [ reduce using rule 34 (expression -> not expression .) ]
+  ! gequal          [ reduce using rule 34 (expression -> not expression .) ]
+  ! isnotequal      [ reduce using rule 34 (expression -> not expression .) ]
+  ! isequal         [ reduce using rule 34 (expression -> not expression .) ]
   ! stror           [ shift and go to state 57 ]
-  ! lt              [ shift and go to state 63 ]
-  ! gt              [ shift and go to state 66 ]
-  ! lequal          [ shift and go to state 60 ]
-  ! gequal          [ shift and go to state 58 ]
-  ! isnotequal      [ shift and go to state 59 ]
-  ! isequal         [ shift and go to state 68 ]
 
 
 state 38

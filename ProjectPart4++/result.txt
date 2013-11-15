@@ -1,0 +1,86 @@
+./tests/PrintTest.py executed Right
+6
+ 
+./tests/addTests.py executed Right
+ 
+./tests/assTestIncorrect.py executed wrong
+ 
+./tests/augAssign.py executed Right
+ 
+./tests/bitand.py executed Right
+ 
+./tests/bitor.py executed Right
+ 
+./tests/bitxor.py executed Right
+ 
+./tests/boolOpIntTest.py executed Right
+4
+ 
+./tests/boolPrintTest.py executed Right
+True
+False
+ 
+./tests/constFailedTests.py executed wrong
+ 
+./tests/divTest.py executed Right
+ 
+./tests/floorDivTest.py executed Right
+ 
+./tests/ifTest.py executed Right
+3
+2
+3
+ 
+./tests/inputTest.py executed Right
+3
+2
+3
+ 
+./tests/invert.py executed Right
+-6
+ 
+./tests/leftShift.py executed Right
+ 
+./tests/literal.py executed Right
+ 
+./tests/literalFail.py executed wrong
+ 
+./tests/modTest.py executed Right
+6
+ 
+./tests/mul.py executed Right
+ 
+./tests/operators.py executed Right
+4
+ 
+./tests/parentExprTest.py executed Right
+35
+ 
+./tests/powerTest.py executed Right
+ 
+./tests/printTestFail1.py executed wrong
+ 
+./tests/printTestFail2.py executed wrong
+ 
+./tests/rightShift.py executed Right
+0
+ 
+./tests/subTest.py executed Right
+ 
+./tests/testing.py executed Right
+2
+ 
+./tests/unaryAdd.py executed Right
+ 
+./tests/unarySub.py executed Right
+ 
+./tests/undefinedVariable.py executed Right
+ 
+./tests/unrecognisedAST.py executed Right
+2
+ 
+./tests/whileTest.py executed Right
+3
+2
+1
+ 
