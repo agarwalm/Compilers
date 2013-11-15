@@ -41,6 +41,7 @@ def compile():
 	ast=a3test.getAST()
 	print "; ",ast
 	print " "
+	sys.stderr.write("hi\n")
 
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
@@ -151,10 +152,9 @@ def boxingPass(n):
 		return n
 			
 	elif isinstance(n, Not):
-		temp = boxingPass(n.expr)
-		n.expr = ConvertToBool(temp)
-		box = Tag(n, "bool")
-		return box
+		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
+		tagged.flag = "bool"
+		return tagged
 		
 			
 	elif isinstance(n,BoolExp):
@@ -237,7 +237,7 @@ def boxingPass(n):
 		else:
 			n.left=ConvertToInt(tempL)
 		if isinstance(n.right,Bool):
-			n.right=ConvertToBool
+			n.right=ConvertToInt(tempR)
 		else:
 			n.right=ConvertToInt(tempR)
 
