@@ -292,7 +292,7 @@ def t_main_incassign(t):
 	r'\+\='
 	return t
 
-def t_comma(t):
+def t_main_comma(t):
 	r'\,'
 	return t
 
@@ -534,14 +534,6 @@ def p_lambdaThings(p):
 	p[0] = node.Lambda(p[2], p[4])
 
 #how do you tell it epsilon?? Just a blank space?
-def p_idList(p):
-	'id_list : identifier'
-	p[0] = [p[1]]
-	
-
-def p_idList2(p):
-	'id_list : identifier comma id_list'
-	p[0] = [p[1]]+p[3]
 
 def p_returnStmt(p):
 	'simple_statement : return expression'
@@ -551,6 +543,16 @@ def p_returnStmt(p):
 def p_compStmt(p):
 	'compound_stmt : def identifier oparen id_list cparen colon suite'
 	p[0] = node.Function(p[2], p[4], p[7])
+        
+def p_idList(p):
+	'id_list : identifier'
+	p[0] = [p[1]]
+	
+
+def p_idList2(p):
+	'id_list : identifier comma id_list'
+	p[0] = [p[1]]+p[3]
+        
 
 def p_suite(p):
 	'suite : newline indent statement_list dedent'
@@ -678,9 +680,6 @@ def p_binary_operators(p):
 	elif p[2] == 'and' or p[2] == 'or':
 		p[0] = node.BoolExp(p[1], p[2], p[3], None)
 
-
-
-	
 
 
 def p_if(p):
