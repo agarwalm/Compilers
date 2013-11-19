@@ -22,7 +22,9 @@ states = (
 tokens = [
 		  'indent', 'dedent', 'identifier', 'newline', 'comment',
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
-		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floorassign', 'floordiv', 'div', 'lt', 'gt', 'isequal', 'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon', 'not', 'strand', 'stror', 'lambda', 'def', 'return'
+		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floorassign', 'floordiv', 'div', 'lt', 'gt', 'isequal',
+                  'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon', 'not', 'strand', 'stror',
+                  'lambda', 'def', 'return'
 		  ]
 
 t_indent_ignore = ''
@@ -427,6 +429,7 @@ def t_main_comment(t):
 
 precedence = (
 			  ('nonassoc','print'),
+                          ('nonassoc', 'lambda'),
 			  ('nonassoc', 'if', 'elif', 'else', 'while'),
 			  ('left', 'stror'),
 			  ('left', 'strand'),
@@ -523,12 +526,12 @@ def p_simpst(p):
 
 
 def p_callingTheFunc(p):
-	'expression : expression lparen parameters rparen'
-	p[0] = CallFunc(p[1], p[3])
+	'expression : expression oparen parameters cparen'
+	p[0] = node.CallFunc(p[1], p[3])
 
 def p_lambdaThings(p):
 	'expression : lambda id_list colon expression'
-	p[0] = Lambda(p[2], p[4])
+	p[0] = node.Lambda(p[2], p[4])
 
 #how do you tell it epsilon?? Just a blank space?
 def p_idList(p):
@@ -546,8 +549,8 @@ def p_returnStmt(p):
 
 
 def p_compStmt(p):
-	'compound_stmt : def identifier lparen id_list rparen colon suite'
-	p[0] = Function(p[2], p[4], p[7])
+	'compound_stmt : def identifier oparen id_list cparen colon suite'
+	p[0] = node.Function(p[2], p[4], p[7])
 
 def p_suite(p):
 	'suite : newline indent statement_list dedent'
