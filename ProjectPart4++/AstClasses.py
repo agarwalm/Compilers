@@ -356,6 +356,37 @@ class ZSpecial:
 		return "ZSpecial(%s)" % (self.str)
 	def __str__(self):
 		return "ZSpecial(%s)" % (self.str)
+	
+class Function:
+	def __init__(self,argnames, code):
+		self.argnames = argnames
+		self.code = code
+	def __repr__(self):
+		return "Function(%s, %s)" % (self.argnames, self.code)
+	def __str__(self):
+		return "Function(%s, %s)" % (self.argnames, self.code)
+			
+	
+class Lambda:
+	def __init__(self, argnames, code):
+		self.argnames = argnames
+		self.code = code
+	def __repr__(self):
+		return "Lambda(%s, %s)" % (self.argnames, self.code)
+	def __str__(self):
+		return "Lambda(%s, %s)" % (self.argnames, self.code)
+	
+class Return():
+	def __init__(self, value):
+		self.value = value
+	def __repr__(self):
+		return "Return(%s)" % (self.value)
+	def __str__(self):
+		return "Return(%s)" % (self.value)
+	#code
+
+	
+
 
 
 
