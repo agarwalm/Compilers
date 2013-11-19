@@ -537,12 +537,16 @@ def p_lambdaThings(p):
 
 def p_returnStmt(p):
 	'simple_statement : return expression'
-	p[0] = p[2]
+	p[0] = node.Return(p[2])
 
 
 def p_compStmt(p):
 	'compound_stmt : def identifier oparen id_list cparen colon suite'
 	p[0] = node.Function(p[2], p[4], p[7])
+
+def p_empfuncParams(p):
+	'id_list : '
+	p[0] = []
         
 def p_idList(p):
 	'id_list : identifier'
