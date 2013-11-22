@@ -428,8 +428,8 @@ def t_main_comment(t):
 
 
 precedence = (
+			  ('nonassoc', 'lambda'),
 			  ('nonassoc','print'),
-                          ('nonassoc', 'lambda'),
 			  ('nonassoc', 'if', 'elif', 'else', 'while'),
 			  ('left', 'stror'),
 			  ('left', 'strand'),
@@ -441,7 +441,8 @@ precedence = (
 			  ('left','plus','minus'),
 			  ('left', 'times', 'div', 'floordiv', 'modulo'),
 			  ('right', 'uadd', 'usub', 'invert'),
-			  ('right', 'power'),
+			  ('right', 'power', 'oparen'),
+			  ('left', 'cparen')
 			  )
 
 
@@ -492,7 +493,7 @@ def p_single_param(p):
 
 def p_params(p):
 	'parameters : parameters comma expression '
-	p[0] = p[1] + [p[1]]
+	p[0] = p[1] + [p[3]]
 
 def p_empty_params(p):
 	'parameters : '
@@ -523,7 +524,7 @@ def p_compoundState(p):
 def p_simpst(p):
 	'statement : simple_statement'
 	p[0] = p[1]
-
+	
 
 def p_callingTheFunc(p):
 	'expression : expression oparen parameters cparen'
@@ -542,7 +543,9 @@ def p_returnStmt(p):
 
 def p_compStmt(p):
 	'compound_stmt : def identifier oparen id_list cparen colon suite'
-	p[0] = node.Function(p[2], p[4], p[7])
+	l = node.Lambda(p[4], p[7])
+	a = node.AssName(p[2])
+	p[0] = node.Assign(a, l)
 
 def p_empfuncParams(p):
 	'id_list : '
