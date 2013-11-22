@@ -45,21 +45,23 @@ def compile():
 
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
+	
+	print "\n here are some freevars! ",free_vars(ast)
 
 
 	#this is where the tagging happens
-	boxingPass(ast);
-
-	print "; ",ast
-	print " "
-	
-	#this is where the flattening happens
-	flatten(ast)
-	
-	for s in flatStmts:
-		print "; ",s
-	
-	print " "
+#	boxingPass(ast);
+#
+#	print "; ",ast
+#	print " "
+#	
+#	#this is where the flattening happens
+#	flatten(ast)
+#	
+#	for s in flatStmts:
+#		print "; ",s
+#	
+#	print " "
 	
 
 
@@ -116,6 +118,61 @@ def compile():
 	print "}"
 	print "declare double @floor(double) nounwind readnone"
 	print "declare double @llvm.pow.f64(double, double) nounwind readonly"
+
+
+assnames = []
+
+
+#some pass that you have to do for closure conversion
+def free_vars(n):
+	
+	if isinstance(n, Module):
+		
+		return free_vars(n.nodes)
+
+		
+	elif isinstance(n,Stmt):
+		templist = []
+		for x in n.nodes:
+			templist += free_vars(x)
+		return templist
+
+
+	
+	elif isinstance(n, Discard):
+		return free_vars(n.expr)
+
+	elif isinstance(n, Assign):
+		return free_vars(n.expr)
+		
+	elif isinstance(n, Printnl):
+		temp = []
+		for n in n.nodes:
+			temp += free_vars(n)
+		return temp
+
+	
+	elif isinstance(n, Const) or isinstance(n, Bool):
+		return set([])
+	
+	elif isinstance(n, Name):
+		return set([n.name])
+
+	elif isinstance(n, Add):
+		return free_vars(n.left) | free_vars(n.right)
+	
+	elif isinstance(n, CallFunc):
+		fv_args = [free_vars(e) for e in n.args]
+		free_in_args = reduce(lambda a, b: a | b, fv_args, set([]))
+		return free_vars(n.node) | free_in_args
+	
+	elif isinstance(n, Lambda):
+		return free_vars(n.code) - set(n.argnames)
+	
+	
+
+	
+
 		
 
 #adds necessary boxing and unboxing instructions to the ast
@@ -134,6 +191,7 @@ def boxingPass(n):
 	elif isinstance(n, Discard):
 		n.expr = boxingPass(n.expr)
 		return n
+
 			
 	elif isinstance(n,Const):
 		if not isinstance(n.value, int):
