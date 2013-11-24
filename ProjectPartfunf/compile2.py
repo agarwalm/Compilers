@@ -16,6 +16,8 @@ varName = 4
 
 #keeps track of the current label num in use so that they can be generated
 labelnum = 0
+# env sumbol
+envVarName = 0
 
 #the list of flattened statement nodes
 flatStmts = []
@@ -41,8 +43,9 @@ def compile():
 	ast=a3test.getAST()
 	print "; ",ast
 	print " "
-	sys.stderr.write("hi\n")
-
+	
+	print "i am freeVars",free_vars(ast)
+	print "i am closure conversion", closureConversion(ast)
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 
@@ -61,7 +64,7 @@ def compile():
 	
 	print " "
 	
-	print free_vars(ast)
+	
 
 #	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 #	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
@@ -119,60 +122,130 @@ def compile():
 	
 
 def free_vars(n):
-	if isinstance(n, Module):
-		return free_vars(n.nodes)
 	
-	if isinstance(n, Assign):
-		if not isinstance(n.name, AssName): 
-			sys.exit('Tuple assignment not permitted')
-		else:
-			return free_vars(n.expr)
-	if isinstance(n, Stmt):
+	if isinstance(n, Module):
+		
+		return free_vars(n.nodes)
+
+		
+	elif isinstance(n,Stmt):
 		templist = []
-		for e in n.nodes:
-			templist += free_vars(e)
+		for x in n.nodes:
+			templist += free_vars(x)
 		return templist
+
+
+	
+	elif isinstance(n, Discard):
+		return free_vars(n.expr)
+
+	elif isinstance(n, Assign):
+		return free_vars(n.expr)
 		
-			
 		
-	if isinstance(n, Const):
+	elif isinstance(n, Printnl):
+		temp = []
+		for n in n.nodes:
+			temp+=free_vars(n)
+		return temp
+
+	
+	elif isinstance(n, Const) or isinstance(n, Bool):
 		return set([])
+	
 	elif isinstance(n, Name):
-		if n.name == 'True' or n.name == 'False':
-			return set([])
-		else:
-			return set([n.name])
+		return set([n.name])
+
 	elif isinstance(n, Add):
 		return free_vars(n.left) | free_vars(n.right)
+	
 	elif isinstance(n, CallFunc):
 		fv_args = [free_vars(e) for e in n.args]
-		free_in_args = reduce(lambda a, b: a|b, fv_args, set([]))
+		free_in_args = reduce(lambda a, b: a | b, fv_args, set([]))
 		return free_vars(n.node) | free_in_args
-	elif isinstance (n, Lambda):
+	
+	elif isinstance(n, Lambda):
+		print "i am code", n.code
 		return free_vars(n.code) - set(n.argnames)
+	
+	elif isinstance(n, ConvertedLambda):
+		return free_vars(n.code) - AssName(n)
+	
+	elif isinstance(n, Return):
+		return set([])
+		
 		
 	else:
 		print "hello what the hell!!!"
+		
+
+def closureConversion(n):
+	if isinstance(n, Lambda):
+		a = free_vars(n)
+		env = makeEnvVar()
+		make_env = {}
+		for vars in a:
+			key = genSymFromVar(vars)
+			value = Name(vars)
+			make_env[key] = value	
+		for vars in a:
+			sub = [(vars, EnvRef(env, vars))]
+		#TODO n.code is something else..need to use sub
+		b = ConvertedLambda(env, n.argnames, n.code)
+		return MakeClosure(b, MakeEnv(make_env))
+	else:
+		print "cannot apply closure conversion algorithm"
+
+def transform(n):
+	if isinstance(n, Lambda):
+		exp2 = Lambda(n.argnames, transform(n.code))
+	elif isinstance(n, ConvertedLambda):
+		exp2 = ConvertedLambda(n.env, n.argnames, transform(n.code))
+	elif isinstance(n, Name):
+		exp2 = n
+	elif isinstance(n, MakeClosure):
+		exp2 = MakeClosure(transform(n.fun), transform(n.env))
+	elif isinstance(n, MakeEnv):
+		exp2 = MakeEnv(transform(n.map.values()))
+	elif isinstance(n, EnvRef):
+		exp2 = EnvRef(transform(n.env), n.name)
+	elif isinstance(n, ApplyClosure):
+		exp2 = ApplyClosure(transform(n.fun), map(transform, n.args))
+	elif isinstance(n, Apply):
+		exp2 = Apply(transform(n.fun), map(transform, n.args))
+	#TODO other cases!!
+	return closureConversion(exp2)
+	
+		
+		
 
 		
-def closureConversion(n):
-	if isinstance(n, Module):
-		closureConversion(n.nodes)
-		return n
-		
-	
-	elif isinstance(n,Stmt):
-		for x in n.nodes:
-			closureConversion(x)
-		return n
-	
-	elif isinstance(n, Lambda):
-		make_env = {}
-		a = free_vars(n)
-		b = ConvertedLambda(n.argnames, n.code, a)
-		for vars in a:
-			make_env.put(genSymFromVar(vars), Name(vars))
-		return (b, make_env)
+#def closureConversion(n):
+#	if isinstance(n, Module):
+#		closureConversion(n.nodes)
+#		return n
+#		
+#	
+#	elif isinstance(n,Stmt):
+#		for x in n.nodes:
+#			closureConversion(x)
+#		return n
+#	
+#	elif isinstance(n, Assign):
+#		return closureConversion(n.expr)
+#	
+#	elif isinstance(n, Lambda):
+#		make_env = {}
+#		a = free_vars(n)
+#		b = ConvertedLambda(n.argnames, n.code, a)
+#		for vars in a:
+#			key = genSymFromVar(vars)
+#			value = Name(vars)
+#			make_env[key] = value
+#			#make_env += {genSymFromVar(vars):Name(vars)}
+#		print "i am makeenv",make_env
+#		print "b, make_env",b, make_env
+#		return (b, make_env)
 		
 		
 		
@@ -807,7 +880,11 @@ def flattenExp(n, x):
 		print n
 		sys.exit('I am an unrecognized AST')
 
-
+def makeEnvVar():
+	global envVarName
+	name = 'env'+ str(envVarName)
+	envVarName += 1
+	return name
 
 #generate a F label
 def genLabel(s):

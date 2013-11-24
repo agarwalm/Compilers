@@ -386,6 +386,64 @@ class Return():
 		return "Return(%s)" % (self.value)
 	#code
 
+class ConvertedLambda():
+	def __init__(self, env, argnames, code):
+		self.env = env
+		self.argnames = argnames
+		self.code = code	
+	def __repr__(self):
+		return "ConvertedLambda(%s, %s, %s)" % (self.env, self.argnames, self.code)
+	def __str__(self):
+		return "ConvertedLambda(%s, %s, %s)" % (self.env, self.argnames, self.code)
+	
+class MakeClosure():
+	def __init__(self, fun, env):
+		self.fun = fun
+		self.env = env
+	def __repr__(self):
+		return "MakeClosure(%s, %s)" % (self.fun, self.env)
+	def __str__(self):
+		return "MakeClosure(%s, %s)" % (self.fun, self.env)
+
+class MakeEnv():
+	def __init__(self, map):
+		self.map = map
+	def __repr__(self):
+		return "MakeEnv(%s)" % (self.map)
+	def __str__(self):
+		return "MakeEnv(%s)" % (self.map)
+
+class EnvRef():
+	def __init__(self, env, name):
+		self.env = env
+		self.name = name
+	def __repr__(self):
+		return "EnvRef(%s, %s)" % (self.env, self.name)
+	def __str__(self):
+		return "EnvRef(%s, %s)" % (self.env, self.name)
+	
+class ApplyClosure():
+	def __int__(self, closure, args):
+		self.closure = closure
+		self.args = args
+	def __repr__(self):
+		return "ApplyClosure(%s, %s)" % (self.closure, self.args)
+	def __str__(self):
+		return "ApplyClosure(%s, %s)" % (self.closure, self.args)
+class Apply():
+	def __init__(self, fun, args):
+		self.fun = fun
+		self.args = args
+	def __repr__(self):
+		return "Apply(%s, %s)" % (self.fun, self.args)
+	def __str__(self):
+		return "Apply(%s, %s)" % (self.fun, self.args)
+	
+		
+
+	
+
+
 	
 
 

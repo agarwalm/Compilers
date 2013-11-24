@@ -428,7 +428,7 @@ def t_main_comment(t):
 
 
 precedence = (
-			  ('nonassoc', 'lambda'),
+			  ('nonassoc', 'lambda', 'def'),
 			  ('nonassoc','print'),
 			  ('nonassoc', 'if', 'elif', 'else', 'while'),
 			  ('left', 'stror'),
@@ -533,6 +533,15 @@ def p_callingTheFunc(p):
 def p_lambdaThings(p):
 	'expression : lambda id_list colon expression'
 	p[0] = node.Lambda(p[2], p[4])
+
+def p_lambdaThings2(p):
+                  'expression : lambda id_list colon ocurly statement ccurly'
+                  p[0] = node.Lambda(p[2], p[5])
+                  
+#def p_statementLambda(p):
+#                  'statement: statement comma statement'
+#                  p[0] = [p[1]+p[3]]
+                  
 
 #how do you tell it epsilon?? Just a blank space?
 
