@@ -45,7 +45,9 @@ def compile():
 	print " "
 	
 	print "i am freeVars",free_vars(ast)
-	print "i am closure conversion", closureConversion(ast)
+	print "i am transform", transform(ast)
+	#print "i am closure conversion", closureConversion(ast)
+	print ast
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 
@@ -154,7 +156,7 @@ def free_vars(n):
 		return set([])
 	
 	elif isinstance(n, Name):
-		return set([n.name])
+		return set([n])
 
 	elif isinstance(n, Add):
 		return free_vars(n.left) | free_vars(n.right)
@@ -165,7 +167,7 @@ def free_vars(n):
 		return free_vars(n.node) | free_in_args
 	
 	elif isinstance(n, Lambda):
-		print "i am code", n.code
+		#print "i am code", n.code
 		return free_vars(n.code) - set(n.argnames)
 	
 	elif isinstance(n, ConvertedLambda):
@@ -179,75 +181,148 @@ def free_vars(n):
 		print "hello what the hell!!!"
 		
 
-def closureConversion(n):
-	if isinstance(n, Lambda):
-		a = free_vars(n)
-		env = makeEnvVar()
-		make_env = {}
-		for vars in a:
-			key = genSymFromVar(vars)
-			value = Name(vars)
-			make_env[key] = value	
-		for vars in a:
-			sub = [(vars, EnvRef(env, vars))]
-		#TODO n.code is something else..need to use sub
-		b = ConvertedLambda(env, n.argnames, n.code)
-		return MakeClosure(b, MakeEnv(make_env))
-	else:
-		print "cannot apply closure conversion algorithm"
+#def closureConversion(n):
+#	if isinstance(n, Lambda):
+#		a = free_vars(n)
+#		env = makeEnvVar()
+#		make_env = {}
+#		for vars in a:
+#			key = genSymFromVar(vars.name)
+#			value = vars
+#			#value = Name(vars)
+#			make_env[key] = value
+#		
+#		freeVars = free_vars(n.code)
+#		
+#		
+#		for vars in freeVars:
+#			sub = EnvRef(env, vars.name)
+#			#sub = [(vars.name, EnvRef(env, vars.name))]
+#		
+#		#TODO n.code is something else..need to use sub
+#		b = ConvertedLambda(env, n.argnames, n.code)
+#		return MakeClosure(b, MakeEnv(make_env))
+#	else:
+#		print "cannot apply closure conversion algorithm"
 
 def transform(n):
-	if isinstance(n, Lambda):
+	if isinstance(n, Module):
+		exp2 = Module(transform(n.nodes))
+		return closureConversion(exp2)
+	elif isinstance(n, Stmt):
+		for elements in n.nodes:
+			exp2 = Stmt(transform(elements))
+		print "i am exp2", exp2
+		return closureConversion(exp2)
+	elif isinstance(n, Discard):
+		exp2 = Discard(transform(n.expr))
+		return closureConversion(exp2)
+	elif isinstance(n, Assign):
+		exp2 = Assign(n.name, transform(n.expr))
+		return closureConversion(exp2)
+	elif isinstance(n, Const):
+		exp2 = n
+		return closureConversion(exp2)
+	elif isinstance(n, Add):
+		exp2 = Add(transform(n.left), transform(n.right))
+		return closureConversion(exp2)
+	elif isinstance(n, Lambda):
 		exp2 = Lambda(n.argnames, transform(n.code))
+		return closureConversion(exp2)
 	elif isinstance(n, ConvertedLambda):
 		exp2 = ConvertedLambda(n.env, n.argnames, transform(n.code))
+		return closureConversion(exp2)
 	elif isinstance(n, Name):
 		exp2 = n
+		return closureConversion(exp2)
 	elif isinstance(n, MakeClosure):
 		exp2 = MakeClosure(transform(n.fun), transform(n.env))
+		return closureConversion(exp2)
 	elif isinstance(n, MakeEnv):
 		exp2 = MakeEnv(transform(n.map.values()))
+		return closureConversion(exp2)
 	elif isinstance(n, EnvRef):
 		exp2 = EnvRef(transform(n.env), n.name)
+		return closureConversion(exp2)
 	elif isinstance(n, ApplyClosure):
 		exp2 = ApplyClosure(transform(n.fun), map(transform, n.args))
+		return closureConversion(exp2)
 	elif isinstance(n, Apply):
 		exp2 = Apply(transform(n.fun), map(transform, n.args))
-	#TODO other cases!!
-	return closureConversion(exp2)
+		return closureConversion(exp2)
+	
 	
 		
 		
 
 		
-#def closureConversion(n):
-#	if isinstance(n, Module):
-#		closureConversion(n.nodes)
-#		return n
-#		
-#	
-#	elif isinstance(n,Stmt):
-#		for x in n.nodes:
-#			closureConversion(x)
-#		return n
-#	
-#	elif isinstance(n, Assign):
-#		return closureConversion(n.expr)
-#	
-#	elif isinstance(n, Lambda):
-#		make_env = {}
-#		a = free_vars(n)
-#		b = ConvertedLambda(n.argnames, n.code, a)
-#		for vars in a:
-#			key = genSymFromVar(vars)
-#			value = Name(vars)
-#			make_env[key] = value
-#			#make_env += {genSymFromVar(vars):Name(vars)}
-#		print "i am makeenv",make_env
-#		print "b, make_env",b, make_env
-#		return (b, make_env)
+def closureConversion(n):
+	if isinstance(n, Module):
+		closureConversion(n.nodes)
+		return n
+		
+	
+	elif isinstance(n,Stmt):
+		print "i am n.nodes", n.nodes
+		for x in n.nodes:
+			closureConversion(x)
+		return n
+	
+	elif isinstance(n, Discard):
+		return closureConversion(n.expr)
+	
+	elif isinstance(n, Assign):
+		return closureConversion(n.expr)
+	
+	elif isinstance(n, Lambda):
+		a = free_vars(n)
+		env = makeEnvVar()
+		make_env = {}
+		for vars in a:
+			key = genSymFromVar(vars.name)
+			value = vars
+			#value = Name(vars)
+			make_env[key] = value
+		
+		#freeVars = free_vars(n.code)
+		#
+		#
+		#for vars in freeVars:
+		#	vars = EnvRef(env, vars.name)
+			#sub = [(vars.name, EnvRef(env, vars.name))]
+		
+		#TODO n.code is something else..need to use sub
+		b = ConvertedLambda(env, n.argnames, newBodyPass(env, a, n.code))
+		return MakeClosure(b, MakeEnv(make_env))
+	else:
+		print "cannot apply closure conversion algorithm"
 		
 		
+def newBodyPass(env, a, n):
+	if isinstance(n, Discard):
+		return newBodyPass(env, a, n.expr)
+	elif isinstance(n, Const):
+		return n
+	elif isinstance(n, Add):
+		n.left = newBodyPass(env, a, n.left)
+		n.right = newBodyPass(env, a, n.right)
+		return n
+	
+	elif isinstance(n, Sub):
+		n.left = newBodyPass(env, a, n.left)
+		n.right = newBodyPass(enc, a, n.right)
+		return n
+	
+	elif isinstance(n, Mul):
+		n.left = newBodyPass(env, a, n.left)
+		n.right = newBodyPass(env, a, n.right)
+		return n
+	
+	elif isinstance(n, Name):
+		if n in a:
+			n = EnvRef(env, n.name)
+		return n
+	
 		
 #adds necessary boxing and unboxing instructions to the ast
 def boxingPass(n):
