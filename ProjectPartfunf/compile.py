@@ -348,6 +348,11 @@ def lambdaLifting(n):
 			tempNodes.append(lambdaLifting(i))
 		return Stmt(tempNodes)
 
+	elif isinstance(n, Discard):
+		n.expr = lambdaLifting(n.expr)
+		return n
+		
+
 	elif isinstance(n, Assign):
 		if isinstance(n.expr,MakeClosure) :
 			a = genSym()
@@ -356,15 +361,21 @@ def lambdaLifting(n):
 			for i in n.expr.fun.code:
 				tempCode.append(lambdaLifting(i))
 			n.expr.fun.code = tempCode
-			lambdaAssigns[ident] = n.expr
-			n.expr = Name(n.name.name)
+			lambdaAssigns[ident] = n.expr.fun
+			n.expr.fun = Name(n.name.name)
 			n.name.name = a
 			return n
 		else:
 			return n
 
 	elif isinstance(n, MakeClosure):
-		n.fun = lambdaLifting(n.fun)
+		a = genSym()
+		tempCode = []
+		for i in n.fun.code:
+			tempCode.append(lambdaLifting(i))
+		n.fun.code = tempCode
+		lambdaAssigns[a] = n.fun
+		n.fun = Name(a)
 		return n
 	
 	else:
