@@ -41,16 +41,22 @@ def compile():
 	filePath = sys.argv[1]
 	#abstract syntax tree for the contents of the file
 	ast=a3test.getAST()
-	print "; ",ast
+	print "\n\n; ",ast
 	print " "
 	
-	print "i am freeVars",free_vars(ast)
+	print "\n\n;i am freeVars",free_vars(ast)
 	d = closureConversion(ast)
 	ast = d
-	print "\n\n converted ast: ", ast, "\n"
+	print "\n\n; converted ast: ", ast, "\n"
 	e = lambdaLifting(ast)
-	print "\n\n lifted ast: ", e, "\n"
-	print "dict: ", lambdaAssigns
+	print "\n\n; lifted ast: ", e, "\n"
+	ast = e
+	
+	for k in lambdaAssigns.keys():
+		lambdaAssigns[k] = boxingPass(lambdaAssigns[k])
+	
+	print "\n\n; tagged dict: ", lambdaAssigns
+	
 	
 	
 	#ast2 = compiler.parseFile(filePath)
@@ -60,6 +66,9 @@ def compile():
 	
 	#this is where the tagging happens
 	boxingPass(ast);
+
+	print "\n\n; THE TAGGED AST: ", ast
+	
 	
 #	print "; ",ast
 #	print " "
@@ -457,6 +466,19 @@ def boxingPass(n):
 	elif isinstance(n, Discard):
 		n.expr = boxingPass(n.expr)
 		return n
+
+	elif isinstance(n, MakeClosure):
+		n.fun = boxingPass(n.fun)
+		temp = Tag(n, "closure")
+		n = temp
+		return n
+
+	elif isinstance(n, ConvertedLambda):
+		tempCode = []
+		for c in n.code:
+			tempCode.append(boxingPass(c))
+		n.code = tempCode
+		return n
 	
 	elif isinstance(n,Const):
 		if not isinstance(n.value, int):
@@ -478,6 +500,11 @@ def boxingPass(n):
 		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
 		tagged.flag = "bool"
 		return tagged
+
+	elif isinstance(n, Return):
+		n.value = boxingPass(n.value)
+		return n
+	
 	
 	
 	elif isinstance(n,BoolExp):
