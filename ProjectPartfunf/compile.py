@@ -45,8 +45,8 @@ def compile():
 	print " "
 	
 	print "i am freeVars",free_vars(ast)
-	print "i am closure conversion \n\n", closureConversion(ast)
-	print ast
+	d = closureConversion(ast)
+	print "\n\n converted ast: ", d
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 	
@@ -54,16 +54,16 @@ def compile():
 	#this is where the tagging happens
 	boxingPass(ast);
 	
-	print "; ",ast
-	print " "
+#	print "; ",ast
+#	print " "
 	
 	#this is where the flattening happens
 	flatten(ast)
 	
-	for s in flatStmts:
-		print "; ",s
-	
-	print " "
+#	for s in flatStmts:
+#		print "; ",s
+#	
+#	print " "
 	
 	
 	
@@ -234,26 +234,27 @@ def bounded_vars(n):
 
 def closureConversion(n):
 	if isinstance(n, Module):
-		closureConversion(n.nodes)
-		return n
+		d = Module(closureConversion(n.nodes))
+		return d
 	
 	
 	elif isinstance(n,Stmt):
+		convertedNodes = []
 		for x in n.nodes:
-			closureConversion(x)
-		return n
+			convertedNodes.append(closureConversion(x))
+		return convertedNodes
 	
 	elif isinstance(n, Discard):
-		closureConversion(n.expr)
-		return n
+		d = Discard(closureConversion(n.expr))
+		return d
 	
 	elif isinstance(n, Assign):
-		closureConversion(n.expr)
-		return n
+		d = Assign(n.name,closureConversion(n.expr))
+		return d
 
 	elif isinstance(n,Return):
-		closureConversion(n.expr)
-		return n
+		d = Return(closureConversion(n.expr))
+		return d
 	
 	elif isinstance(n, Lambda):
 		a = free_vars(n)
@@ -273,14 +274,15 @@ def closureConversion(n):
 		#sub = [(vars.name, EnvRef(env, vars.name))]
 		
 		#TODO n.code is something else..need to use sub
+		tempBody = []
 		for c in n.code:
-			newBodyPass(env, a, c)
-		b = ConvertedLambda(env, n.argnames, n.code)
-		print "CONVERTED LAMBDA ", b
-		n = MakeClosure(b, MakeEnv(make_env))
-		return n
+			tempBody.append(newBodyPass(env, a, c))
+		b = ConvertedLambda(env, n.argnames, tempBody)
+
+		d = MakeClosure(b, MakeEnv(make_env))
+		return d
 	else:
-		print "cannot apply closure conversion algorithm"
+		return n
 
 
 def newBodyPass(env, a, n):
@@ -318,6 +320,9 @@ def newBodyPass(env, a, n):
 		print "\n I FOUND THE FREEVAR!"
 		if n.name in a:
 			n = EnvRef(env, n.name)
+		return n
+
+	else:
 		return n
 	
 
