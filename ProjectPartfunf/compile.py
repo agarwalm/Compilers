@@ -46,7 +46,7 @@ def compile():
 	
 	print "i am freeVars",free_vars(ast)
 	d = closureConversion(ast)
-	print "\n\n converted ast: ", d
+	print "\n\n converted ast: ", d, "\n"
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 	
@@ -242,7 +242,7 @@ def closureConversion(n):
 		convertedNodes = []
 		for x in n.nodes:
 			convertedNodes.append(closureConversion(x))
-		return convertedNodes
+		return Stmt(convertedNodes)
 	
 	elif isinstance(n, Discard):
 		d = Discard(closureConversion(n.expr))
@@ -287,7 +287,8 @@ def closureConversion(n):
 
 def newBodyPass(env, a, n):
 	if isinstance(n, Discard):
-		return newBodyPass(env, a, n.expr)
+		d = Discard(newBodyPass(env, a, n.expr))
+		return d 
 	elif isinstance(n, Const):
 		return n
 	elif isinstance(n, Add):
@@ -306,10 +307,12 @@ def newBodyPass(env, a, n):
 		return n
 
 	elif isinstance(n, Return):
-		return newBodyPass(env, a, n.value)
+		n.value = newBodyPass(env, a, n.value)
+		return n
 
 	elif isinstance(n, Assign):
-		return newBodyPass(env, a, n.expr)
+		d = Assign(n.name, newBodyPass(env, a, n.expr))
+		return d
 
 	elif isinstance(n, Lambda):
 		n =  closureConversion(n)
