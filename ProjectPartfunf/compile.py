@@ -46,9 +46,16 @@ def compile():
 	
 	print "i am freeVars",free_vars(ast)
 	d = closureConversion(ast)
-	print "\n\n converted ast: ", d, "\n"
+	ast = d
+	print "\n\n converted ast: ", ast, "\n"
+	e = lambdaLifting(ast)
+	print "\n\n lifted ast: ", e, "\n"
+	print "dict: ", lambdaAssigns
+	
+	
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
+
 	
 	
 	#this is where the tagging happens
@@ -320,13 +327,61 @@ def newBodyPass(env, a, n):
 	
 	
 	elif isinstance(n, Name):
-		print "\n I FOUND THE FREEVAR!"
 		if n.name in a:
 			n = EnvRef(env, n.name)
 		return n
 
 	else:
 		return n
+
+lambdaAssigns = {}
+
+def lambdaLifting(n):
+	
+	if isinstance(n, Module):
+		n.nodes = lambdaLifting(n.nodes)
+		return n
+
+	elif isinstance(n, Stmt):
+		tempNodes = []
+		for i in n.nodes:
+			tempNodes.append(lambdaLifting(i))
+		return Stmt(tempNodes)
+
+	elif isinstance(n, Assign):
+		if isinstance(n.expr,MakeClosure) :
+			a = genSym()
+			ident = n.name.name
+			tempCode = []
+			for i in n.expr.fun.code:
+				tempCode.append(lambdaLifting(i))
+			n.expr.fun.code = tempCode
+			lambdaAssigns[ident] = n.expr
+			n.expr = Name(n.name.name)
+			n.name.name = a
+			return n
+		else:
+			return n
+
+	elif isinstance(n, MakeClosure):
+		n.fun = lambdaLifting(n.fun)
+		return n
+	
+	else:
+		return n
+	
+			
+	
+
+#	elif isinstance(n, ConvertedLambda):
+#		a = genSym()
+#		n.code = lambdaLifting(n.code)
+#		lambdaAssigns[a] = ConvertedLambda(n.env, n.argnames, n.code)
+#		return Name(a)
+
+	
+
+		
 	
 
 
