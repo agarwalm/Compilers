@@ -15,7 +15,7 @@ class Add:
 		self.right=r
 		self.left=l
 	def __repr__(self):
-		return "Add()"
+		return "Add(%s, %s)" % (self.left,self.right)
 	def __str__(self):
 		return "Add(%s, %s)" % (self.left,self.right)
 
@@ -79,9 +79,9 @@ class CallFunc:
 		self.node=node
 		self.args=args
 	def __repr__(self):
-		return "CallFunc(%s(%s))"%(self.node,self.args)
+		return "CallFunc(%s,%s)"%(self.node,self.args)
 	def __str__(self):
-		return "CallFunc(%s(%s))" % (self.node,self.args)
+		return "CallFunc(%s,%s)" % (self.node,self.args)
 
 class Const:
 	def __init__(self,value):
@@ -90,6 +90,14 @@ class Const:
 		return "Const(%s)" % (self.value)
 	def __str__(self):
 		return "Const(%s)" % (self.value)
+
+class NoneNode:
+	def __init__(self, value):
+		self.value = value
+	def __repr__(self):
+		return "NoneNode()" 
+	def __str__(self):
+		return "NoneNode()"
 
 class Discard:
 	def __init__(self,expr):
@@ -387,16 +395,37 @@ class Return():
 	#code
 
 class ConvertedLambda():
-	def __init__(self, env, argnames, code):
+	def __init__(self,env, argnames, code):
 		self.env = env
 		self.argnames = argnames
 		self.code = code	
 	def __repr__(self):
 		return "ConvertedLambda(%s, %s, %s)" % (self.env, self.argnames, self.code)
 	def __str__(self):
-		return "ConvertedLambda(%s, %s, %s)" % (self.env, self.argnames, self.code)
+		return "ConvertedLambda( %s, %s, %s)" % (self.env, self.argnames, self.code)
+
+
+class ConvertedFunction():
+	def __init__(self,name, env, argnames, code):
+		self.name = name
+		self.env = env
+		self.argnames = argnames
+		self.code = code
+	def __repr__(self):
+		return "ConvertedLambda(%s,%s, %s, %s)" % (self.name, self.env, self.argnames, self.code)
+	def __str__(self):
+		return "ConvertedLambda(%s, %s, %s, %s)" % (self.name, self.env, self.argnames, self.code)
 	
 class MakeClosure():
+	def __init__(self, fun, env):
+		self.fun = fun
+		self.env = env
+	def __repr__(self):
+		return "MakeClosure(%s, %s)" % (self.fun, self.env)
+	def __str__(self):
+		return "MakeClosure(%s, %s)" % (self.fun, self.env)
+
+class CallFuncClosure():
 	def __init__(self, fun, env):
 		self.fun = fun
 		self.env = env
@@ -430,6 +459,7 @@ class ApplyClosure():
 		return "ApplyClosure(%s, %s)" % (self.closure, self.args)
 	def __str__(self):
 		return "ApplyClosure(%s, %s)" % (self.closure, self.args)
+
 class Apply():
 	def __init__(self, fun, args):
 		self.fun = fun
