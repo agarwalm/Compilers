@@ -24,7 +24,7 @@ tokens = [
 		  'oparen', 'cparen', 'obracket', 'cbracket', 'ocurly', 'ccurly',
 		  'string', 'integer', 'print', 'plus', 'minus', 'times', 'lparen', 'rparen', 'xor','and', 'or', 'invert', 'lshift', 'rshift', 'power', 'modulo', 'usub', 'uadd', 'equals', 'incassign', 'decassign', 'floorassign', 'floordiv', 'div', 'lt', 'gt', 'isequal',
                   'isnotequal', 'lequal', 'gequal', 'divassign', 'mulassign', 'modassign', 'lshiftassign', 'rshiftassign', 'andassign', 'orassign','xorassign', 'powerassign', 'input', 'comma', 'if', 'else', 'while', 'elif', 'true', 'false', 'colon', 'not', 'strand', 'stror',
-                  'lambda', 'def', 'return'
+                  'lambda', 'def', 'return', 'none'
 		  ]
 
 t_indent_ignore = ''
@@ -192,6 +192,11 @@ t_main_ignore = ' \t'
 
 
 tokens += []
+
+
+def t_main_none(t):
+	r'None'
+	return t
 
 def t_main_lambda(t):
 	r'lambda'
@@ -532,11 +537,11 @@ def p_callingTheFunc(p):
 
 def p_lambdaThings(p):
 	'expression : lambda id_list colon expression'
-	p[0] = node.Lambda(p[2], p[4])
+	p[0] = node.Lambda(p[2], [p[4]])
 
-def p_lambdaThings2(p):
-                  'expression : lambda id_list colon ocurly statement ccurly'
-                  p[0] = node.Lambda(p[2], p[5])
+#def p_lambdaThings2(p):
+#                  'expression : lambda id_list colon ocurly statement ccurly'
+#                  p[0] = node.Lambda(p[2], p[5])
                   
 #def p_statementLambda(p):
 #                  'statement: statement comma statement'
@@ -572,7 +577,14 @@ def p_idList2(p):
 
 def p_suite(p):
 	'suite : newline indent statement_list dedent'
-	p[0] = p[3]
+	if isinstance(p[3][-1], node.Return):
+		p[0] = p[3]
+	else:
+		p[3].append(node.Return(node.NoneNode(None)))
+		p[0] = p[3]
+		
+		
+
 
 
 
@@ -746,14 +758,16 @@ def p_exp_name(t):
 	'expression0 : name'
 	t[0] = t[1]
 
-def p_exp_bool(t):
-	'expression0 : boolean'
+
+def p_exp_none(t):
+	'expression0 : noval'
 	t[0] = t[1]
+
 
 def p_const_rule(t):
 	'num : integer'
-	#include boxing here
 	t[0] = node.Const(t[1])
+
 
 
 def p_assname(t):
@@ -764,7 +778,9 @@ def p_name(t):
 	'name : identifier'
 	t[0] = node.Name(t[1])
 
-
+def p_none(t):
+	'noval : none'
+	t[0] = node.Noneyo(None)
 	
 
 def p_boolean(t):

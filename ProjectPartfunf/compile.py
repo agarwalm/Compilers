@@ -167,7 +167,7 @@ def free_vars(n):
 		return temp
 	
 	
-	elif isinstance(n, Const) or isinstance(n, Bool):
+	elif isinstance(n, Const) or isinstance(n, Bool) or isinstance(n,NoneNode):
 		return set([])
 	
 	elif isinstance(n, Name):
@@ -226,7 +226,7 @@ def bounded_vars(n):
 
 	
 	elif isinstance(n, Assign):
-		return set([n.name])
+		return set([n.name.name])
 	
 	
 	elif isinstance(n, Lambda):
@@ -291,6 +291,7 @@ def closureConversion(n):
 		
 		#TODO n.code is something else..need to use sub
 		tempBody = []
+
 		for c in n.code:
 			tempBody.append(newBodyPass(env, a, c))
 		b = ConvertedLambda(env, n.argnames, tempBody)
@@ -495,6 +496,12 @@ def boxingPass(n):
 	
 	elif isinstance(n, Name):
 		return n
+			
+	elif isinstance(n, NoneNode):
+		return n
+
+	elif isinstance(n, EnvRef):
+		return n
 	
 	elif isinstance(n, Not):
 		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
@@ -571,7 +578,9 @@ def boxingPass(n):
 		#if the left and right are integers, they will be boxed.
 		#if they are names, their values have already been boxed.
 		tempL = boxingPass(n.left)
+		print "l: ", tempL
 		tempR = boxingPass(n.right)
+		print "r: ", tempL
 		#to unbox, shift right by 2 for both bools and ints
 		n.left= ConvertToInt(tempL)
 		n.right = ConvertToInt(tempR)
