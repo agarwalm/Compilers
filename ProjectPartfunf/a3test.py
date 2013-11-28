@@ -813,7 +813,7 @@ def getAST():
 	file = sys.argv[1]
 	stream = open(file)
 	contents = stream.read()
-	lex.runmain(lexer)
+	#lex.runmain(lexer)
 	ast=yacc.parse(contents, lexer)
 	return ast
 

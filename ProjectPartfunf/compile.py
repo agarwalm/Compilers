@@ -86,7 +86,8 @@ def compile():
 	print " " 
 	
 	
-	
+	print '%struct.Hashtable = type {}'
+
 	#	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 	#	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
 	#	print 'define i32 @input() nounwind uwtable ssp { '
@@ -120,7 +121,7 @@ def compile():
 	print "define i32 @main() nounwind uwtable ssp {"
 	
 	#print "statements list after flattening: ", flatStmts
-	alloc(flatStmts)
+#	alloc(flatStmts)
 	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
@@ -132,9 +133,9 @@ def compile():
 	
 	
 	
-	for s in flatStmts:
-		
-		astToLLVM(s, None)
+#	for s in flatStmts:
+#		
+#		astToLLVM(s, None)
 	
 	#output what you need for the end of the main function in the .ll file
 	print "	 "+"ret i32 0"
@@ -371,7 +372,6 @@ def lambdaLifting(n):
 			tempCode = []
 			for i in n.expr.fun.code:
 				tempCode.append(lambdaLifting(i))
-			print "TEMPCODE: ", tempCode
 			n.expr.fun.code = tempCode
 			lambdaAssigns["func_"+n.name.name] = n.expr.fun
 			n.expr.fun = Name("func_"+n.name.name)
@@ -916,6 +916,12 @@ def flattenExp(n, x):
 		flatStmts.append(temp)
 		return x
 
+	elif isinstance(n, NoneNode):
+		temp = Assign(AssName(x), n)
+		flatStmts.append(temp)
+		return x
+
+
 		
 	
 	
@@ -1141,6 +1147,8 @@ def dictflatten(dictionary):
 	global flatStmts
 	for values in lambdaAssigns.values():
 		if isinstance(values, ConvertedLambda):
+			for i in range(0, len(values.argnames)):
+				values.argnames[i] = genSymFromVar(values.argnames[i])
 			for c in values.code:
 				flattenStmt(c)
 			values.code = flatStmts
@@ -1203,9 +1211,9 @@ def alloc(flatList):
 def funcDefs():
 
 	for k in lambdaAssigns.keys():
-		tempParams = "()"
+		tempParams = "(%struct.Hashtable* %env)"
 		if len(lambdaAssigns[k].argnames) != 0:
-			tempParams = "(i32 "+lambdaAssigns[k].argnames[0]
+			tempParams = "(%struct.Hashtable* %env, i32 "+lambdaAssigns[k].argnames[0]
 		for i in range(1, len(lambdaAssigns[k].argnames)):
 			tempParams += ", i32 "+lambdaAssigns[k].argnames[i]
 		tempParams += ")"
@@ -1306,6 +1314,9 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, Power):
 		return codegen_power(ast,x)
+
+	elif isinstance(ast, NoneNode):
+		return "0"
 	
 	
 	elif isinstance(ast, Bitor):
@@ -1339,6 +1350,9 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, Printnl):
 		return codegen_print(ast, x)
+
+	elif isinstance(ast, Return):
+		return codegen_return(ast, x)
 	
 	elif isinstance(ast, CallFunc):
 		return codegen_callfunc(ast, x)
@@ -1375,6 +1389,13 @@ def codegen_assign_bool(ast,x):
 	
 	else:
 		output_store(val,x)
+
+def codegen_return(ast,x):
+	val = astToLLVM(ast.value,x)
+	print "\n ; returning ", ast
+	a = genSym()
+	output_load(a, val)
+	print "    ret i32 ",a
 
 
 def codegen_tag(ast,x):
