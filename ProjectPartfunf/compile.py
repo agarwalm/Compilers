@@ -23,6 +23,8 @@ envVarName = 0
 flatStmts = []
 variables = []
 
+lambdaAssigns = {}
+
 nested_if = False
 or_if = False
 currentEnd = None
@@ -58,7 +60,7 @@ def compile():
 	print "\n\n; tagged dict: ", lambdaAssigns
 	
 	
-	
+
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 
@@ -69,17 +71,19 @@ def compile():
 
 	print "\n\n; THE TAGGED AST: ", ast
 	
-	
+	dictflatten(lambdaAssigns)
 #	print "; ",ast
 #	print " "
 	
 	#this is where the flattening happens
 	flatten(ast)
 	
-#	for s in flatStmts:
-#		print "; ",s
-#	
-#	print " "
+	for s in flatStmts:
+		print "; ",s
+	
+	print " "
+	print "; the flattened dict: ", lambdaAssigns
+	print " " 
 	
 	
 	
@@ -341,7 +345,6 @@ def newBodyPass(env, a, n):
 	else:
 		return n
 
-lambdaAssigns = {}
 
 def lambdaLifting(n):
 	
@@ -497,6 +500,9 @@ def boxingPass(n):
 	elif isinstance(n, NoneNode):
 		return n
 
+	elif isinstance(n, CallFunc):
+		return n
+
 	elif isinstance(n, EnvRef):
 		return n
 	
@@ -647,6 +653,7 @@ def flatten(n):
 			flattenStmt(x)
 
 def flattenStmt(n):
+
 	#if you have an Assign, then use the given variable to assign
 	#to the expression
 	if isinstance(n, Assign):
@@ -658,6 +665,9 @@ def flattenStmt(n):
 			temp = Assign(AssName(x),Name(flattenExp(n.expr,genSym())))
 			variables.append(x)
 			flatStmts.append(temp)
+	
+		elif isinstance(n.expr, Tag) and isinstance(n.expr.node, MakeClosure):
+				flatStmts.append(n)
 		
 		else:
 			variables.append(genSymFromVar(n.name.name))
@@ -685,6 +695,17 @@ def flattenStmt(n):
 		#		flatStmts.append(GoTo(ge))
 		#flatStmts.append(Label(ge))
 		return b
+	
+	elif isinstance(n, Return):
+		a = genSym()
+		variables.append(a)
+		b = genSym()
+		variables.append(b)
+		n.value = Name(flattenExp(n.value, a))
+		temp = Assign(AssName(b), n)
+		flatStmts.append(temp)
+		return b
+	
 	
 	elif isinstance(n, AugAssign):
 		a = genSym()
@@ -866,6 +887,7 @@ def flattenStmt(n):
 
 
 def flattenExp(n, x):
+
 	
 	#assign a constant to the given variable and append to list
 	if isinstance(n,Const):
@@ -874,6 +896,13 @@ def flattenExp(n, x):
 		temp = Assign(AssName(x),n)
 		flatStmts.append(temp)
 		return x
+	
+	elif isinstance(n, EnvRef):
+		temp = Assign(AssName(x), n)
+		flatStmts.append(temp)
+		return x
+
+	
 	#if we have a name, return a variable of the form %v
 	elif isinstance(n,Name):
 		a = genSymFromVar(n.name)
@@ -885,6 +914,8 @@ def flattenExp(n, x):
 		temp = Assign(AssName(x), n)
 		flatStmts.append(temp)
 		return x
+
+		
 	
 	
 	elif isinstance(n, Tag) or isinstance(n,Untag) or isinstance(n, ConvertToBool) or isinstance(n, ConvertToInt):
@@ -1099,11 +1130,22 @@ def flattenExp(n, x):
 		flatStmts.append(temp)
 		return x
 	
-	
 	else:
 		print flatStmts
 		print n
 		sys.exit('I am an unrecognized AST')
+
+#flatten the dictionary!!!
+def dictflatten(dictionary):
+	global flatStmts
+	for values in lambdaAssigns.values():
+		if isinstance(values, ConvertedLambda):
+			for c in values.code:
+				flattenStmt(c)
+			values.code = flatStmts
+			flatStmts = []
+	return dictionary
+
 
 def makeEnvVar():
 	global envVarName
