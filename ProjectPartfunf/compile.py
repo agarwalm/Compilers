@@ -114,12 +114,13 @@ def compile():
 	#	print '}\n'
 	#	print 'declare i32 @printf(i8*, ...)'
 	
+	funcDefs()
 	
 	#output first line needed for the .ll file
 	print "define i32 @main() nounwind uwtable ssp {"
 	
 	#print "statements list after flattening: ", flatStmts
-	alloc()
+	alloc(flatStmts)
 	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
@@ -1188,16 +1189,36 @@ def genSymFromVar(v):
 	return vStr
 
 #prints all alloca instructions for the variables in the flatStmts list
-def alloc():
+def alloc(flatList):
 	
 	lst = []
-	for element in flatStmts:
+	for element in flatList:
 		if isinstance(element, Assign) and element.name.name not in lst:
 			lst.append(element.name.name)
 	
 	for element in lst:
 		print "	 "+element + " = alloca i32, align 4"
 		variables = lst
+
+def funcDefs():
+
+	for k in lambdaAssigns.keys():
+		tempParams = "()"
+		if len(lambdaAssigns[k].argnames) != 0:
+			tempParams = "(i32 "+lambdaAssigns[k].argnames[0]
+		for i in range(1, len(lambdaAssigns[k].argnames)):
+			tempParams += ", i32 "+lambdaAssigns[k].argnames[i]
+		tempParams += ")"
+		print "define i32 @"+k+tempParams+" nounwind uwtable ssp {"
+		alloc(lambdaAssigns[k].code)
+		for code in lambdaAssigns[k].code:
+			astToLLVM(code,genSym())
+		print "}"
+
+	
+
+
+
 
 
 current_ifcheck = None
