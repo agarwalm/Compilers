@@ -44,7 +44,7 @@ def compile():
 	print "\n\n; ",ast
 	print " "
 	
-	print "\n\n;i am freeVars",free_vars(ast)
+	#print "\n\n;i am freeVars",free_vars(ast)
 	d = closureConversion(ast)
 	ast = d
 	print "\n\n; converted ast: ", ast, "\n"
@@ -199,9 +199,6 @@ def free_vars(n):
 	
 	elif isinstance(n, ConvertedLambda):
 		return free_vars(n.code) - AssName(n)
-	
-	elif isinstance(n, Return):
-		return set([])
 	
 	
 	else:
@@ -370,10 +367,10 @@ def lambdaLifting(n):
 			tempCode = []
 			for i in n.expr.fun.code:
 				tempCode.append(lambdaLifting(i))
+			print "TEMPCODE: ", tempCode
 			n.expr.fun.code = tempCode
-			lambdaAssigns[ident] = n.expr.fun
-			n.expr.fun = Name(n.name.name)
-			n.name.name = a
+			lambdaAssigns["func_"+n.name.name] = n.expr.fun
+			n.expr.fun = Name("func_"+n.name.name)
 			return n
 		else:
 			return n
