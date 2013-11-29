@@ -1291,19 +1291,15 @@ def astToLLVM(ast, x):
 
 	
 	elif isinstance(ast, MakeClosure):
-		ht = CallFunc(Name("createHT"), [Name("i32 "+str(len(ast.env.map)))])
-		a = genSym()
-		codegen_callfunc(ht, a)
-		tempstring = "i32 (i32)* @func_"+ast.fun
+		tempstring = "i32 (i32)* @func_"+ast.fun.name
 		
-		closure = CallFunc(Name("make_closure"), [Name(tempstring)])
+		closure = CallFunc(Name("make_closure"), [Name(tempstring), Name("i32 "+str(len(ast.env.map)))])
 		b = genSym()
 		codegen_callfunc(closure, b)
-		for keys, values in ast.env.map:
-			m = CallFunc(Name("htInsert"), [a, keys, values])
-			print "i am m", m
+		for key, value in ast.env.map:
+			tempVarStringParam = "i8* getelementptr inbounds (["+str(len(key)+1)+" x i8]* @.str_"+ast.env+"_"+key[2:]+", i32 0, i32 0)"
+			m = CallFunc(Name("htInsert"), [Name(tempstring), Name(tempVarStringParam), Name("i32 "+value)])
 			c = genSym()
-			param2 = "i32* hashtable, i32 key, i32 val"
 			codegen_callfunc(m, c)
 		
 	
@@ -1327,7 +1323,10 @@ def astToLLVM(ast, x):
 		return codegen_boolExp(ast, x, ast.flag)
 	
 	elif isinstance(ast, Tag):
-		return codegen_tag(ast, x)
+		if ast.flag == 'closure':
+			astToLLVM(ast.node, x)
+		else:
+			return codegen_tag(ast, x)
 	
 	elif isinstance(ast, ConvertToInt):
 		return codegen_toint(ast,x)
