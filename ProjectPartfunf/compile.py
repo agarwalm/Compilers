@@ -22,6 +22,7 @@ envVarName = 0
 #the list of flattened statement nodes
 flatStmts = []
 variables = []
+envRefs = []
 
 lambdaAssigns = {}
 
@@ -105,6 +106,7 @@ def compile():
 	
 	
 	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
+	print 'declare i32 @htGet(%struct.Hashtable*, i8*)'
 	
 	#	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
 	#	print '  %1 = alloca i32, align 4'
@@ -114,6 +116,8 @@ def compile():
 	#	print '  ret i32 0'
 	#	print '}\n'
 	#	print 'declare i32 @printf(i8*, ...)'
+
+	dec_global_string_vars()
 	
 	funcDefs()
 	
@@ -121,7 +125,7 @@ def compile():
 	print "define i32 @main() nounwind uwtable ssp {"
 	
 	#print "statements list after flattening: ", flatStmts
-#	alloc(flatStmts)
+#alloc(flatStmts)
 	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
@@ -207,9 +211,9 @@ def free_vars(n):
 		return free_vars(n.code) - AssName(n)
 	
 	
-	else:
+#else:
 		
-		print "hello what the hell!!!"
+#print "hello what the hell!!!"
 
 
 
@@ -245,8 +249,8 @@ def bounded_vars(n):
 		return set([])
 	
 	
-	else:
-		print "hello what the hell!!!"
+		#else:
+#	print "hello what the hell!!!"
 
 
 
@@ -342,6 +346,9 @@ def newBodyPass(env, a, n):
 	elif isinstance(n, Name):
 		if n.name in a:
 			n = EnvRef(env, n.name)
+			global envRefs
+			envRefs.append(n)
+			
 		return n
 
 	else:
@@ -1208,12 +1215,30 @@ def alloc(flatList):
 		print "	 "+element + " = alloca i32, align 4"
 		variables = lst
 
-def funcDefs():
 
+#declare global strings for all of the free vars in teh environments in the lambdas dictionary
+#this is so you can pass them as strings to htGet when you see EnvRefs
+def dec_global_string_vars():
+	print "\n;declaring strings for all of the free variables"
+	global envRefs
+	for er in envRefs:
+		n = er.name
+		tempString = "\n@.str_"+er.env+"_"+n+" = private unnamed_addr constant ["+str(len(n)+1)+" x i8] c\""+n+"\\00\", align 1\n"
+		print tempString
+	
+	
+		
+
+
+
+def funcDefs():
+	
+	print "\n; defining all of the functions"
+	
 	for k in lambdaAssigns.keys():
 		tempParams = "(%struct.Hashtable* %env)"
 		if len(lambdaAssigns[k].argnames) != 0:
-			tempParams = "(%struct.Hashtable* %env, i32 "+lambdaAssigns[k].argnames[0]
+			tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)+", i32 "+lambdaAssigns[k].argnames[0]
 		for i in range(1, len(lambdaAssigns[k].argnames)):
 			tempParams += ", i32 "+lambdaAssigns[k].argnames[i]
 		tempParams += ")"
@@ -1222,6 +1247,9 @@ def funcDefs():
 		for code in lambdaAssigns[k].code:
 			astToLLVM(code,genSym())
 		print "}"
+
+
+		
 
 	
 
@@ -1258,6 +1286,22 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, ZSpecial):
 		print ast.str
+
+	
+	elif isinstance(ast, MakeClosure):
+		a = CallFunc(Name("make_closure"), [astToLLVM(ast.fun,x), d])
+		codegen_callfunc(a,x)
+		
+	
+	#when you encounter an EnvRef, you look up the value of the free variable in the correct hash table
+	elif isinstance(ast, EnvRef):
+		d = genSym()
+		tempMapParam = "%struct.Hashtable* "+genSymFromVar(ast.env)
+		tempVarStringParam = "i8* getelementptr inbounds (["+str(len(ast.name)+1)+" x i8]* @.str_"+ast.env+"_"+ast.name+", i32 0, i32 0)"
+		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ] )
+		codegen_callfunc(e,d)
+		
+	
 	
 	elif isinstance(ast, Const):
 		return str(ast.value)
@@ -1358,7 +1402,7 @@ def astToLLVM(ast, x):
 		return codegen_callfunc(ast, x)
 	
 	else:
-		
+		print "; ", ast
 		sys.exit('io sono an unrecognized AST')
 
 
@@ -1680,12 +1724,25 @@ def  codegen_augassign(ast, x, op):
 	output_store(c,x)
 
 def codegen_callfunc(ast,x):
+	print"\n ; calling the function ,  ", ast ," \n"
 	
-	print"\n ; calling the function ,  "+ ast.node.name +" \n"
+	tempargs = ""
+	
+	if len(ast.args)>0:
+		a = genSym()
+		tempargs += astToLLVM(ast.args[0],a)
+		for i in range(1, len(ast.args)):
+			b = genSym()
+			tempargs+= ","+astToLLVM(ast.args[i],b)
+			
+	
+	
+
 	
 	a = genSym()
-	output_call(a,"i32",ast.node.name,"","")
-	output_store(a,x)
+	output_call(x,"i32",ast.node.name,tempargs,"")
+	if ast.node.name != "htGet":
+		output_store(a,x)
 
 
 def output_load(tempvar, val):
