@@ -49,11 +49,11 @@ typedef struct function{
 // }
 
 
-function* make_closure(void* func_ptr){
+function* make_closure(void* func_ptr,int size){
 
     function f= function GC_malloc(sizeof(function));
-    f.func_ptr=func_ptr;
-    f.free_vars=createHt(16);
+    f->func_ptr=func_ptr;
+    f->free_vars=createHt(size);
     return f;
 }
 
@@ -65,7 +65,12 @@ void insertFreeVar(function* func_ptr, char* var, int value){
 	htInsert(func_ptr->free_vars, var, value);
 }
 
+void* get_func_ptr(function f){
+	return f->func_ptr;
+} 
 
+
+closure_call
 
 //Hashmap implementation
 
