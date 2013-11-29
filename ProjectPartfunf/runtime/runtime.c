@@ -69,10 +69,33 @@ void* get_func_ptr(function f){
 	return f->func_ptr;
 } 
 
+Hashtable* get_free_vars(function* func_ptr){
+	return func_ptr->free_vars;
+}
 
-closure_call
+//to be defined
+
+void closure_call(){
+
+}
 
 //Hashmap implementation
+int main(int argc,char **argv){
+	void* p;
+	function* f=make_closure(p,16);
+	char* x="envx"
+	char* y="envy"
+	char* z="envz"
+	insertFreeVar(f,x,1);
+	insertFreeVar(f,y,2);
+	insertFreeVar(f,z,3);
+	int x1=getFreeVar(f,x);
+	int y1=getFreeVar(f,y);
+	int z1=getFreeVar(f,z);
+
+
+}
+
 
 typedef struct Entry{
 	char *key;
@@ -173,46 +196,48 @@ int htGet(Hashtable *ht,char *key){
 	}
 }
 
-int main( int argc, char **argv ) {
-	GC_init();
+x
+
+// int main( int argc, char **argv ) {
+// 	GC_init();
  
-	Hashtable *hashtable = createHt( 20 );
-	htInsert(hashtable,"key11",1);
-	htInsert(hashtable,"key21",2);
-	htInsert(hashtable,"key31",3);
-	htInsert(hashtable,"key41",4);
-	htInsert(hashtable,"key51",5);
+// 	Hashtable *hashtable = createHt( 20 );
+// 	htInsert(hashtable,"key11",1);
+// 	htInsert(hashtable,"key21",2);
+// 	htInsert(hashtable,"key31",3);
+// 	htInsert(hashtable,"key41",4);
+// 	htInsert(hashtable,"key51",5);
 
-	printf("%d\n", htGet(hashtable, "key11"));
-	printf("%d\n", htGet(hashtable, "key21"));
-	printf("%d\n", htGet(hashtable, "key31"));
-	printf("%d\n", htGet(hashtable, "key41"));
-	printf("%d\n", htGet(hashtable, "key51"));
-	printf("%d\n", htGet(hashtable, "key61"));
+// 	printf("%d\n", htGet(hashtable, "key11"));
+// 	printf("%d\n", htGet(hashtable, "key21"));
+// 	printf("%d\n", htGet(hashtable, "key31"));
+// 	printf("%d\n", htGet(hashtable, "key41"));
+// 	printf("%d\n", htGet(hashtable, "key51"));
+// 	printf("%d\n", htGet(hashtable, "key61"));
 
 
- 	int i;
- 	char dig;
- 	char str[6];
- 	for(i=0; i<40; i++){
- 		dig = (char)(((int)'0')+i);
- 		strcpy(str,"key");
- 		int len = strlen(str);
-        str[len] = dig;
-        str[len+1] = '\0';
-		htInsert(hashtable,str,i);
-	}
+//  	int i;
+//  	char dig;
+//  	char str[6];
+//  	for(i=0; i<40; i++){
+//  		dig = (char)(((int)'0')+i);
+//  		strcpy(str,"key");
+//  		int len = strlen(str);
+//         str[len] = dig;
+//         str[len+1] = '\0';
+// 		htInsert(hashtable,str,i);
+// 	}
 
-	//htDelete(hashtable, "k4");
- 	 for (i=0;i<41;i++){
- 		dig = (char)(((int)'0')+i);
- 		strcpy(str,"key");
- 		int len = strlen(str);
-        str[len] = dig;
-        str[len+1] = '\0';
-		printf("%d\n", htGet(hashtable, str));
-	}
+// 	//htDelete(hashtable, "k4");
+//  	 for (i=0;i<41;i++){
+//  		dig = (char)(((int)'0')+i);
+//  		strcpy(str,"key");
+//  		int len = strlen(str);
+//         str[len] = dig;
+//         str[len+1] = '\0';
+// 		printf("%d\n", htGet(hashtable, str));
+// 	}
 
  
-	return 0;
-}
+// 	return 0;
+// }
