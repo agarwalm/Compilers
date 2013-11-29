@@ -30,20 +30,30 @@ int print_int_nl(int x){
 
 
 //Env functions
-Hashtable* make_env(){
-    return createHt(16);
-}
+// Hashtable* make_env(){
+//     return createHt(16);
+// }
 
 //closure
 typedef struct function{
     void* func_ptr;
     Hashtable* free_vars;
-};
+}function;
 
-function* make_closure(void* func_ptr,Hashtable* free_vars){
+// function* make_closure(void* func_ptr,Hashtable* free_vars){
+
+//     function f= function GC_malloc(sizeof(function));
+//     f.func_ptr=func_ptr;
+//     f.free_vars=createHt(16);
+//     return f;
+// }
+
+
+function* make_closure(void* func_ptr,int size){
+
     function f= function GC_malloc(sizeof(function));
-    f.func_ptr=func_ptr;
-    f.free_vars=free_vars;
+    f->func_ptr=func_ptr;
+    f->free_vars=createHt(size);
     return f;
 }
 
@@ -55,7 +65,12 @@ void insertFreeVar(function* func_ptr, char* var, int value){
 	htInsert(func_ptr->free_vars, var, value);
 }
 
+void* get_func_ptr(function f){
+	return f->func_ptr;
+} 
 
+
+closure_call
 
 //Hashmap implementation
 
