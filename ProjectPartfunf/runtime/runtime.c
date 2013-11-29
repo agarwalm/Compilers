@@ -34,7 +34,7 @@ Hashtable* make_env(){
     return createHt(16);
 }
 
-
+//closure
 typedef struct function{
     void* func_ptr;
     Hashtable* free_vars;
@@ -54,13 +54,6 @@ int getFreeVar(function* func_ptr, char* var){
 void insertFreeVar(function* func_ptr, char* var, int value){
 	htInsert(func_ptr->free_vars, var, value);
 }
-
-
-
-
-
-
-
 
 
 
@@ -147,7 +140,7 @@ void htInsert(Hashtable *ht,char *key,int *value){
 		}
 	}
 }
-
+//for envref call this func, with makeEnv
 
 int htGet(Hashtable *ht,char *key){
 	int index =hash(key,ht);
