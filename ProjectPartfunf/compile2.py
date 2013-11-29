@@ -22,6 +22,9 @@ envVarName = 0
 #the list of flattened statement nodes
 flatStmts = []
 variables = []
+envRefs = []
+
+lambdaAssigns = {}
 
 nested_if = False
 or_if = False
@@ -44,7 +47,7 @@ def compile():
 	print "\n\n; ",ast
 	print " "
 	
-	print "\n\n;i am freeVars",free_vars(ast)
+	#print "\n\n;i am freeVars",free_vars(ast)
 	d = closureConversion(ast)
 	ast = d
 	print "\n\n; converted ast: ", ast, "\n"
@@ -55,11 +58,10 @@ def compile():
 	for k in lambdaAssigns.keys():
 		lambdaAssigns[k] = boxingPass(lambdaAssigns[k])
 	
-	
 	print "\n\n; tagged dict: ", lambdaAssigns
 	
-	print "\n\n; i am flattend dic", dictflatten(lambdaAssigns)
 	
+
 	#ast2 = compiler.parseFile(filePath)
 	#print ast2
 
@@ -70,20 +72,24 @@ def compile():
 
 	print "\n\n; THE TAGGED AST: ", ast
 	
-	
+	dictflatten(lambdaAssigns)
 #	print "; ",ast
 #	print " "
 	
 	#this is where the flattening happens
 	flatten(ast)
 	
-#	for s in flatStmts:
-#		print "; ",s
-#	
-#	print " "
+	for s in flatStmts:
+		print "; ",s
+	
+	print " "
+	print "; the flattened dict: ", lambdaAssigns
+	print " " 
 	
 	
-	
+	print '%struct.Hashtable = type {}'
+	print '%struct.function = type { i8*}'
+
 	#	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 	#	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
 	#	print 'define i32 @input() nounwind uwtable ssp { '
@@ -101,6 +107,8 @@ def compile():
 	
 	
 	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
+	print 'declare i32 @htGet(%struct.Hashtable*, i8*)'
+	
 	
 	#	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
 	#	print '  %1 = alloca i32, align 4'
@@ -110,13 +118,16 @@ def compile():
 	#	print '  ret i32 0'
 	#	print '}\n'
 	#	print 'declare i32 @printf(i8*, ...)'
+
+	dec_global_string_vars()
 	
+	funcDefs()
 	
 	#output first line needed for the .ll file
 	print "define i32 @main() nounwind uwtable ssp {"
 	
 	#print "statements list after flattening: ", flatStmts
-	alloc()
+#alloc(flatStmts)
 	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
@@ -128,9 +139,9 @@ def compile():
 	
 	
 	
-	for s in flatStmts:
-		
-		astToLLVM(s, None)
+#	for s in flatStmts:
+#		
+#		astToLLVM(s, None)
 	
 	#output what you need for the end of the main function in the .ll file
 	print "	 "+"ret i32 0"
@@ -168,7 +179,7 @@ def free_vars(n):
 		return temp
 	
 	
-	elif isinstance(n, Const) or isinstance(n, Bool):
+	elif isinstance(n, Const) or isinstance(n, Bool) or isinstance(n,NoneNode):
 		return set([])
 	
 	elif isinstance(n, Name):
@@ -201,13 +212,10 @@ def free_vars(n):
 	elif isinstance(n, ConvertedLambda):
 		return free_vars(n.code) - AssName(n)
 	
-	elif isinstance(n, Return):
-		return set([])
 	
-	
-	else:
+#else:
 		
-		print "hello what the hell!!!"
+#print "hello what the hell!!!"
 
 
 
@@ -243,8 +251,8 @@ def bounded_vars(n):
 		return set([])
 	
 	
-	else:
-		print "hello what the hell!!!"
+		#else:
+#	print "hello what the hell!!!"
 
 
 
@@ -283,7 +291,16 @@ def closureConversion(n):
 			value = Name(vars)
 			make_env[key] = value
 		
+		#freeVars = free_vars(n.code)
+		#
+		#
+		#for vars in freeVars:
+		#	vars = EnvRef(env, vars.name)
+		#sub = [(vars.name, EnvRef(env, vars.name))]
+		
+		#TODO n.code is something else..need to use sub
 		tempBody = []
+
 		for c in n.code:
 			tempBody.append(newBodyPass(env, a, c))
 		b = ConvertedLambda(env, n.argnames, tempBody)
@@ -331,12 +348,14 @@ def newBodyPass(env, a, n):
 	elif isinstance(n, Name):
 		if n.name in a:
 			n = EnvRef(env, n.name)
+			global envRefs
+			envRefs.append(n)
+			
 		return n
 
 	else:
 		return n
 
-lambdaAssigns = {}
 
 def lambdaLifting(n):
 	
@@ -363,9 +382,8 @@ def lambdaLifting(n):
 			for i in n.expr.fun.code:
 				tempCode.append(lambdaLifting(i))
 			n.expr.fun.code = tempCode
-			lambdaAssigns[ident] = n.expr.fun
-			n.expr.fun = Name(n.name.name)
-			n.name.name = a
+			lambdaAssigns["func_"+n.name.name] = n.expr.fun
+			n.expr.fun = Name("func_"+n.name.name)
 			return n
 		else:
 			return n
@@ -382,6 +400,65 @@ def lambdaLifting(n):
 	
 	else:
 		return n
+	
+			
+	
+
+#	elif isinstance(n, ConvertedLambda):
+#		a = genSym()
+#		n.code = lambdaLifting(n.code)
+#		lambdaAssigns[a] = ConvertedLambda(n.env, n.argnames, n.code)
+#		return Name(a)
+
+	
+
+		
+	
+
+
+#def lambdaLifting(n):
+#	if isinstance(n, Module):
+#	lambdaLifting(n.nodes)
+#	return n
+#		
+#		
+#	elif isinstance(n,Stmt):
+#		for x in n.nodes:
+#			lambdaLifting(x)
+#		return n
+#	
+#	elif isinstance(n, Discard):
+#		return lambdaLifting(n.expr)
+#	
+#	elif isinstance(n, Assign):
+#		return lambdaLifting(n.expr)
+#	
+#	elif isinstance(n, Lambda):
+#		a = free_vars(n)
+#		env = makeEnvVar()
+#		make_env = {}
+#		for vars in a:
+#			key = genSymFromVar(vars)
+#			#value = vars
+#			value = Name(vars)
+#			make_env[key] = value
+#		
+#		#freeVars = free_vars(n.code)
+#		#
+#		#
+#		#for vars in freeVars:
+#		#	vars = EnvRef(env, vars.name)
+#		#sub = [(vars.name, EnvRef(env, vars.name))]
+#		
+#		#TODO n.code is something else..need to use sub
+#		for c in n.code:
+#			newBodyPass(env, a, c)
+#		b = ConvertedLambda(env, n.argnames, n.code)
+#		return MakeClosure(b, MakeEnv(make_env))
+#	else:
+#		print "cannot apply closure conversion algorithm"
+	
+
 
 
 #adds necessary boxing and unboxing instructions to the ast
@@ -429,7 +506,13 @@ def boxingPass(n):
 	
 	elif isinstance(n, Name):
 		return n
-	
+			
+	elif isinstance(n, NoneNode):
+		return n
+
+	elif isinstance(n, CallFunc):
+		return n
+
 	elif isinstance(n, EnvRef):
 		return n
 	
@@ -508,7 +591,9 @@ def boxingPass(n):
 		#if the left and right are integers, they will be boxed.
 		#if they are names, their values have already been boxed.
 		tempL = boxingPass(n.left)
+		print "l: ", tempL
 		tempR = boxingPass(n.right)
+		print "r: ", tempL
 		#to unbox, shift right by 2 for both bools and ints
 		n.left= ConvertToInt(tempL)
 		n.right = ConvertToInt(tempR)
@@ -561,6 +646,10 @@ def boxingPass(n):
 
 
 
+
+
+
+
 #takes a non flattened ast and returns a flattened ast
 def flatten(n):
 	
@@ -574,6 +663,7 @@ def flatten(n):
 			flattenStmt(x)
 
 def flattenStmt(n):
+
 	#if you have an Assign, then use the given variable to assign
 	#to the expression
 	if isinstance(n, Assign):
@@ -585,6 +675,9 @@ def flattenStmt(n):
 			temp = Assign(AssName(x),Name(flattenExp(n.expr,genSym())))
 			variables.append(x)
 			flatStmts.append(temp)
+	
+		elif isinstance(n.expr, Tag) and isinstance(n.expr.node, MakeClosure):
+				flatStmts.append(n)
 		
 		else:
 			variables.append(genSymFromVar(n.name.name))
@@ -622,7 +715,7 @@ def flattenStmt(n):
 		temp = Assign(AssName(b), n)
 		flatStmts.append(temp)
 		return b
-		
+	
 	
 	elif isinstance(n, AugAssign):
 		a = genSym()
@@ -804,6 +897,7 @@ def flattenStmt(n):
 
 
 def flattenExp(n, x):
+
 	
 	#assign a constant to the given variable and append to list
 	if isinstance(n,Const):
@@ -814,8 +908,10 @@ def flattenExp(n, x):
 		return x
 	
 	elif isinstance(n, EnvRef):
-		flatStmts.append(n)
-		return n
+		temp = Assign(AssName(x), n)
+		flatStmts.append(temp)
+		return x
+
 	
 	#if we have a name, return a variable of the form %v
 	elif isinstance(n,Name):
@@ -828,6 +924,14 @@ def flattenExp(n, x):
 		temp = Assign(AssName(x), n)
 		flatStmts.append(temp)
 		return x
+
+	elif isinstance(n, NoneNode):
+		temp = Assign(AssName(x), n)
+		flatStmts.append(temp)
+		return x
+
+
+		
 	
 	
 	elif isinstance(n, Tag) or isinstance(n,Untag) or isinstance(n, ConvertToBool) or isinstance(n, ConvertToInt):
@@ -1040,24 +1144,26 @@ def flattenExp(n, x):
 		n.args = lst
 		temp = Assign(AssName(x), n)
 		flatStmts.append(temp)
-		return x		
-		
+		return x
+	
 	else:
 		print flatStmts
 		print n
 		sys.exit('I am an unrecognized AST')
-	
-#flatten the dictionary!!!	
+
+#flatten the dictionary!!!
 def dictflatten(dictionary):
 	global flatStmts
-	for values in lambdaAssigns.values():	
+	for values in lambdaAssigns.values():
 		if isinstance(values, ConvertedLambda):
-			for c in values.code:				
+			for i in range(0, len(values.argnames)):
+				values.argnames[i] = genSymFromVar(values.argnames[i])
+			for c in values.code:
 				flattenStmt(c)
-			values.code = flatStmts 		
-			flatStmts = []	
-	return dictionary 
-	
+			values.code = flatStmts
+			flatStmts = []
+	return dictionary
+
 
 def makeEnvVar():
 	global envVarName
@@ -1100,16 +1206,57 @@ def genSymFromVar(v):
 	return vStr
 
 #prints all alloca instructions for the variables in the flatStmts list
-def alloc():
+def alloc(flatList):
 	
 	lst = []
-	for element in flatStmts:
+	for element in flatList:
 		if isinstance(element, Assign) and element.name.name not in lst:
 			lst.append(element.name.name)
 	
 	for element in lst:
 		print "	 "+element + " = alloca i32, align 4"
 		variables = lst
+
+
+#declare global strings for all of the free vars in teh environments in the lambdas dictionary
+#this is so you can pass them as strings to htGet when you see EnvRefs
+def dec_global_string_vars():
+	print "\n;declaring strings for all of the free variables"
+	global envRefs
+	for er in envRefs:
+		n = er.name
+		tempString = "\n@.str_"+er.env+"_"+n+" = private unnamed_addr constant ["+str(len(n)+1)+" x i8] c\""+n+"\\00\", align 1\n"
+		print tempString
+	
+	
+		
+
+
+
+def funcDefs():
+	
+	print "\n; defining all of the functions"
+	
+	for k in lambdaAssigns.keys():
+		tempParams = "(%struct.Hashtable* %env)"
+		if len(lambdaAssigns[k].argnames) != 0:
+			tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)+", i32 "+lambdaAssigns[k].argnames[0]
+		for i in range(1, len(lambdaAssigns[k].argnames)):
+			tempParams += ", i32 "+lambdaAssigns[k].argnames[i]
+		tempParams += ")"
+		print "define i32 @"+k+tempParams+" nounwind uwtable ssp {"
+		alloc(lambdaAssigns[k].code)
+		for code in lambdaAssigns[k].code:
+			astToLLVM(code,genSym())
+		print "}"
+
+
+		
+
+	
+
+
+
 
 
 current_ifcheck = None
@@ -1141,6 +1288,34 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, ZSpecial):
 		print ast.str
+
+	
+	elif isinstance(ast, MakeClosure):
+		ht = CallFunc(Name("createHT"), [Name("i32 "+str(len(ast.env.map)))])
+		a = genSym()
+		codegen_callfunc(ht, a)
+		tempstring = "i32 (i32)* @func_"+ast.fun
+		
+		closure = CallFunc(Name("make_closure"), [Name(tempstring)])
+		b = genSym()
+		codegen_callfunc(closure, b)
+		for keys, values in ast.env.map:
+			m = CallFunc(Name("htInsert"), [a, keys, values])
+			print "i am m", m
+			c = genSym()
+			param2 = "i32* hashtable, i32 key, i32 val"
+			codegen_callfunc(m, c)
+		
+	
+	#when you encounter an EnvRef, you look up the value of the free variable in the correct hash table
+	elif isinstance(ast, EnvRef):
+		d = genSym()
+		tempMapParam = "%struct.Hashtable* "+genSymFromVar(ast.env)
+		tempVarStringParam = "i8* getelementptr inbounds (["+str(len(ast.name)+1)+" x i8]* @.str_"+ast.env+"_"+ast.name+", i32 0, i32 0)"
+		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ] )
+		codegen_callfunc(e,d)
+		
+	
 	
 	elif isinstance(ast, Const):
 		return str(ast.value)
@@ -1197,6 +1372,9 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, Power):
 		return codegen_power(ast,x)
+
+	elif isinstance(ast, NoneNode):
+		return "0"
 	
 	
 	elif isinstance(ast, Bitor):
@@ -1230,12 +1408,15 @@ def astToLLVM(ast, x):
 	
 	elif isinstance(ast, Printnl):
 		return codegen_print(ast, x)
+
+	elif isinstance(ast, Return):
+		return codegen_return(ast, x)
 	
 	elif isinstance(ast, CallFunc):
 		return codegen_callfunc(ast, x)
 	
 	else:
-		
+		print "; ", ast
 		sys.exit('io sono an unrecognized AST')
 
 
@@ -1266,6 +1447,13 @@ def codegen_assign_bool(ast,x):
 	
 	else:
 		output_store(val,x)
+
+def codegen_return(ast,x):
+	val = astToLLVM(ast.value,x)
+	print "\n ; returning ", ast
+	a = genSym()
+	output_load(a, val)
+	print "    ret i32 ",a
 
 
 def codegen_tag(ast,x):
@@ -1550,12 +1738,25 @@ def  codegen_augassign(ast, x, op):
 	output_store(c,x)
 
 def codegen_callfunc(ast,x):
+	print"\n ; calling the function ,  ", ast ," \n"
 	
-	print"\n ; calling the function ,  "+ ast.node.name +" \n"
+	tempargs = ""
+	
+	if len(ast.args)>0:
+		a = genSym()
+		tempargs += astToLLVM(ast.args[0],a)
+		for i in range(1, len(ast.args)):
+			b = genSym()
+			tempargs+= ","+astToLLVM(ast.args[i],b)
+			
+	
+	
+
 	
 	a = genSym()
-	output_call(a,"i32",ast.node.name,"","")
-	output_store(a,x)
+	output_call(x,"i32",ast.node.name,tempargs,"")
+	if ast.node.name != "htGet":
+		output_store(a,x)
 
 
 def output_load(tempvar, val):
