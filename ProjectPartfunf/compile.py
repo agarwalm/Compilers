@@ -26,6 +26,7 @@ envRefs = []
 
 lambdaAssigns = {}
 functionTypes = {}
+functionToClosure = {}
 
 nested_if = False
 or_if = False
@@ -207,10 +208,14 @@ def free_vars(n):
 		for frag in n.code:
 			a = free_vars(frag)
 			b = bounded_vars(frag)
+
 			if a!= None:
+				
 				templist += free_vars(frag)
 			if b != None:
-				tempbound += bounded_vars(frag)
+				tempbound += b
+		for v in n.argnames:
+			variables.append(v)
 		return set(templist) - (set(tempbound) | set(n.argnames))
 	
 	elif isinstance(n, ConvertedLambda):
@@ -893,8 +898,9 @@ def flattenStmt(n):
 	
 	
 	else:
-		print "; unrecognized: ", n
-		sys.exit('unrecognized AST')
+		print "; unrecognized by flattenStmt: ", n
+		#sys.exit('unrecognized AST')
+		flattenExp(n, genSym())
 
 
 
@@ -1142,7 +1148,8 @@ def flattenExp(n, x):
 		for i in range(0, len(n.args)):
 			a = genSym()
 			flattened_expr = flattenExp(n.args[i], a)
-			lst.append(Name(flattened_expr))
+			tempWithType = "i32* "+flattened_expr
+			lst.append(Name(tempWithType))
 		n.args = lst
 		temp = Assign(AssName(x), n)
 		flatStmts.append(temp)
@@ -1245,11 +1252,11 @@ def funcDefs():
 		
 		tempParams = "(%struct.Hashtable* %env"
 		if len(lambdaAssigns[k].argnames) != 0:
-			tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)+", i32 "+lambdaAssigns[k].argnames[0]
-			typeStore = "(%struct.Hashtable* , i32"
+			tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)+", i32* "+lambdaAssigns[k].argnames[0]
+			typeStore = "(%struct.Hashtable* , i32*"
 		for i in range(1, len(lambdaAssigns[k].argnames)):
-			tempParams += ", i32 "+lambdaAssigns[k].argnames[i]
-			typeStore += ", i32"
+			tempParams += ", i32* "+lambdaAssigns[k].argnames[i]
+			typeStore += ", i32*"
 
 		tempParams += ")"
 		typeStore += ")"
@@ -1311,6 +1318,8 @@ def astToLLVM(ast, x):
 		closure = CallFunc(Name("make_closure"), [Name(bitcast), Name("i32 "+str(len(ast.env.map)))])
 		b = genSym()
 		codegen_callfunc(closure, b)
+		functionToClosure[ast.fun.name]= b
+		
 		for key in ast.env.map:
 			tempVarStringParam = "i8* getelementptr inbounds (["+str(len(key)-1)+" x i8]* @.str_"+ast.env.name+"_"+key[2:]+", i32 0, i32 0)"
 			m = CallFunc(Name("htInsert"), [Name("%struct.function* "+b), Name(tempVarStringParam), Name("i32* "+genSymFromVar(ast.env.map[key].name))])
@@ -1755,13 +1764,19 @@ def codegen_callfunc(ast,x):
 	print"\n ; calling the function ,  ", ast ," \n"
 	
 	tempargs = ""
+	definedFuncArgs = ""
+	tempName = "func_"+ast.node.name
+	if tempName in functionToClosure.keys():
+		definedFuncArgs = "%struct.Hashtable* "+functionToClosure[tempName]+"->env"
 	
 	if len(ast.args)>0:
 		a = genSym()
 		tempargs += astToLLVM(ast.args[0],a)
+		definedFuncArgs += ","+astToLLVM(ast.args[0],a)
 		for i in range(1, len(ast.args)):
 			b = genSym()
 			tempargs+= ","+astToLLVM(ast.args[i],b)
+			definedFuncArgs+= ","+astToLLVM(ast.args[i],b)
 			
 	
 	
@@ -1774,9 +1789,10 @@ def codegen_callfunc(ast,x):
 	elif ast.node.name == "htInsert":
 		output_call(x,"i32 (%struct.function*, i8*, i32*)*", ast.node.name, tempargs,"")
 	else:
-		output_call(x,"i32",ast.node.name,tempargs,"")
-	if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
-		output_store(a,x)
+		d = genSym()
+		output_call(d,"i32","func_"+ast.node.name,definedFuncArgs,"")
+		#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
+		output_store(a,d)
 
 
 def output_load(tempvar, val):

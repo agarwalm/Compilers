@@ -537,7 +537,7 @@ def p_callingTheFunc(p):
 
 def p_lambdaThings(p):
 	'expression : lambda id_list colon expression'
-	p[0] = node.Lambda(p[2], [p[4]])
+	p[0] = node.Lambda(p[2], [node.Return(p[4])])
 
 #def p_lambdaThings2(p):
 #                  'expression : lambda id_list colon ocurly statement ccurly'
