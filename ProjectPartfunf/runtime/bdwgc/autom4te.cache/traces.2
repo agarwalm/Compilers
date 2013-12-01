@@ -1498,21 +1498,15 @@ m4_if([$1], [v7],
 AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ])
-m4trace:m4/gc_set_version.m4:17: -1- AC_DEFUN([GC_SET_VERSION], [
+m4trace:m4/gc_set_version.m4:16: -1- AC_DEFUN([GC_SET_VERSION], [
   AC_MSG_CHECKING(GC version numbers)
   GC_VERSION_MAJOR=`echo $PACKAGE_VERSION | sed 's/^\([[0-9]][[0-9]]*\)[[.]].*$/\1/g'`
   GC_VERSION_MINOR=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]]\([[0-9]][[0-9]]*\).*$/\1/g'`
-  GC_ALPHA_VERSION=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]][[0-9]]*//'`
-
-  case "$GC_ALPHA_VERSION" in
-    alpha*)
-      GC_ALPHA_VERSION=`echo $GC_ALPHA_VERSION \
-      | sed 's/alpha\([[0-9]][[0-9]]*\)/\1/'` ;;
-    *)  GC_ALPHA_MAJOR='' ;;
-  esac
+  GC_VERSION_MICRO=`echo $PACKAGE_VERSION | sed 's/^[[^.]]*[[.]][[^.]]*[[.]]\([[0-9]][[0-9]]*\)$/\1/g'`
 
   if test :$GC_VERSION_MAJOR: = :: \
-     -o   :$GC_VERSION_MINOR: = :: ;
+       -o :$GC_VERSION_MINOR: = :: \
+       -o :$GC_VERSION_MICRO: = :: ;
   then
     AC_MSG_RESULT(invalid)
     AC_MSG_ERROR([nonconforming PACKAGE_VERSION='$PACKAGE_VERSION'])
@@ -1522,12 +1516,10 @@ m4trace:m4/gc_set_version.m4:17: -1- AC_DEFUN([GC_SET_VERSION], [
                      [The major version number of this GC release.])
   AC_DEFINE_UNQUOTED([GC_VERSION_MINOR], $GC_VERSION_MINOR,
                      [The minor version number of this GC release.])
-  if test :$GC_ALPHA_VERSION: != :: ; then
-    AC_DEFINE_UNQUOTED([GC_ALPHA_VERSION], $GC_ALPHA_VERSION,
-                       [The alpha version number, if applicable.])
-  fi
+  AC_DEFINE_UNQUOTED([GC_VERSION_MICRO], $GC_VERSION_MICRO,
+                     [The micro version number of this GC release.])
   AC_MSG_RESULT(major=$GC_VERSION_MAJOR minor=$GC_VERSION_MINOR \
-${GC_ALPHA_VERSION:+alpha=}$GC_ALPHA_VERSION)
+                micro=$GC_VERSION_MICRO)
 ])
 m4trace:m4/libtool.m4:69: -1- AC_DEFUN([LT_INIT], [AC_PREREQ([2.58])dnl We use AC_INCLUDES_DEFAULT
 AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
@@ -2561,7 +2553,7 @@ m4trace:configure.ac:19: -1- m4_pattern_allow([^target_os$])
 m4trace:configure.ac:21: -1- GC_SET_VERSION
 m4trace:configure.ac:21: -1- m4_pattern_allow([^GC_VERSION_MAJOR$])
 m4trace:configure.ac:21: -1- m4_pattern_allow([^GC_VERSION_MINOR$])
-m4trace:configure.ac:21: -1- m4_pattern_allow([^GC_ALPHA_VERSION$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^GC_VERSION_MICRO$])
 m4trace:configure.ac:22: -1- AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 m4trace:configure.ac:22: -1- m4_pattern_allow([^AM_[A-Z]+FLAGS$])
 m4trace:configure.ac:22: -1- AM_SET_CURRENT_AUTOMAKE_VERSION

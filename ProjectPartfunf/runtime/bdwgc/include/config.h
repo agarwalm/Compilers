@@ -28,9 +28,6 @@
 /* Define to support IBM AIX threads. */
 /* #undef GC_AIX_THREADS */
 
-/* The alpha version number, if applicable. */
-#define GC_ALPHA_VERSION 3
-
 /* Define to enable internal debug assertions. */
 /* #undef GC_ASSERTIONS */
 
@@ -97,8 +94,11 @@
 /* The major version number of this GC release. */
 #define GC_VERSION_MAJOR 7
 
+/* The micro version number of this GC release. */
+#define GC_VERSION_MICRO 0
+
 /* The minor version number of this GC release. */
-#define GC_VERSION_MINOR 3
+#define GC_VERSION_MINOR 5
 
 /* Define to support win32-pthreads. */
 /* #undef GC_WIN32_PTHREADS */
@@ -183,7 +183,7 @@
 #define PACKAGE_NAME "gc"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "gc 7.3alpha3"
+#define PACKAGE_STRING "gc 7.5.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "gc"
@@ -192,7 +192,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "7.3alpha3"
+#define PACKAGE_VERSION "7.5.0"
 
 /* Define to enable parallel marking. */
 #define PARALLEL_MARK 1
@@ -246,7 +246,7 @@
 /* #undef USE_WINALLOC */
 
 /* Version number of package */
-#define VERSION "7.3alpha3"
+#define VERSION "7.5.0"
 
 /* The POSIX feature macro. */
 /* #undef _POSIX_C_SOURCE */

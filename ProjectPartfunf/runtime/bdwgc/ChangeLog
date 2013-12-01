@@ -1,5 +1,5 @@
 
-== [7.3alpha4] (development) ==
+== [7.4.0] 2013-11-17 ==
 
 * Add 'bytes reclaimed' counters to public GC_prof_stats_s.
 * Add AArch64 (64-bit ARM) target support.
@@ -33,6 +33,7 @@
 * Better document GC_warn_proc in gc.h.
 * Call GC_on_abort (with NULL argument) on exit(1).
 * Call GC_stats/verbose_log_printf instead of GC_log_printf if print_stats.
+* Change policy regarding version numbers ("micro" part instead of "alpha").
 * Changed C99-style designated init of GC_dl_hashtbl struct to use C89-style.
 * Check GC_base result in GC_print_all_smashed_proc.
 * Check that SIG_SUSPEND and SIG_THR_RESTART are different (Pthreads).
@@ -66,6 +67,7 @@
 * Eliminate warning and simplify expression in GC_init_explicit_typing.
 * Enable 'force GC at every GC_malloc' debug-related functionality.
 * Enable on-demand debug logging in GC_FindTopOfStack (Darwin).
+* Enable prefetch operations by default (GCC 3.0+).
 * Enable staticrootstest for the case of GC shared library build.
 * Enable thread-local allocation support for Clang on Cygwin.
 * Explicitly specify that Darwin, Linux and Solaris platforms have dladdr.
@@ -132,6 +134,7 @@
 * Specify GC_malloc result is unused in some tests.
 * Specify GC_pthread_join result is unused in threadkey_test.
 * Specify LT_INIT in configure.ac.
+* Start of port to QNX.
 * Support rthreads introduced in OpenBSD 5.2+.
 * Suppress 'GC_dont_gc deprecated' warning in gc.h if GC_DONT_GC.
 * Tag GC malloc routines with alloc_size attribute for Clang 3.2+.
@@ -239,7 +242,7 @@
 * Use union of AO_t and word to favor strict-aliasing compiler optimization.
 
 
-== [7.2e] (candidate) ==
+== [7.2e] 2013-11-10 ==
 
 * Add weak attribute to avoid __data_start undefined messages (s390x).
 * Add weak stubs for pthread_cancel API.

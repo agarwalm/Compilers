@@ -102,8 +102,12 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 #endif
 
 #ifndef NO_DEBUGGING
-  GC_INNER GC_bool GC_dump_regularly = FALSE;
+# ifdef GC_DUMP_REGULARLY
+    GC_INNER GC_bool GC_dump_regularly = TRUE;
                                 /* Generate regular debugging dumps. */
+# else
+    GC_INNER GC_bool GC_dump_regularly = FALSE;
+# endif
 #endif
 
 #ifdef KEEP_BACK_PTRS
@@ -849,7 +853,9 @@ GC_API void GC_CALL GC_init(void)
     /* then.  Thus we really don't hold any locks, and can */
     /* in fact safely initialize them here.                */
 #   ifdef THREADS
-      GC_ASSERT(!GC_need_to_lock);
+#     ifndef GC_ALWAYS_MULTITHREADED
+        GC_ASSERT(!GC_need_to_lock);
+#     endif
 #     ifdef SN_TARGET_PS3
         {
           pthread_mutexattr_t mattr;
@@ -934,7 +940,7 @@ GC_API void GC_CALL GC_init(void)
         }
 #     endif
 #   endif /* !SMALL_CONFIG */
-#   ifndef NO_DEBUGGING
+#   if !defined(NO_DEBUGGING) && !defined(GC_DUMP_REGULARLY)
       if (0 != GETENV("GC_DUMP_REGULARLY")) {
         GC_dump_regularly = TRUE;
       }
@@ -1210,7 +1216,9 @@ GC_API void GC_CALL GC_init(void)
 
     /* The rest of this again assumes we don't really hold      */
     /* the allocation lock.                                     */
-#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC) \
+       || (defined(GC_ALWAYS_MULTITHREADED) && defined(GC_WIN32_THREADS) \
+           && !defined(GC_NO_THREADS_DISCOVERY))
         /* Make sure marker threads are started and thread local */
         /* allocation is initialized, in case we didn't get      */
         /* called from GC_init_parallel.                         */
@@ -1289,7 +1297,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 
 # ifdef THREADS
-#   ifdef PARALLEL_MARK
+#   if defined(PARALLEL_MARK) && !defined(GC_ALWAYS_MULTITHREADED)
 #     define IF_NEED_TO_LOCK(x) if (GC_parallel || GC_need_to_lock) x
 #   else
 #     define IF_NEED_TO_LOCK(x) if (GC_need_to_lock) x

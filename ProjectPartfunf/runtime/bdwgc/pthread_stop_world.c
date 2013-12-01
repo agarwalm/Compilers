@@ -225,8 +225,13 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
   IF_CANCEL(int cancel_state;)
   AO_t my_stop_count = AO_load(&GC_stop_count);
 
-  if ((signed_word)sig_arg != GC_sig_suspend)
+  if ((signed_word)sig_arg != GC_sig_suspend) {
+#   if defined(GC_FREEBSD_THREADS)
+      /* Workaround "deferred signal handling" bug in FreeBSD 9.2.      */
+      if (0 == sig_arg) return;
+#   endif
     ABORT("Bad signal in suspend_handler");
+  }
 
   DISABLE_CANCEL(cancel_state);
       /* pthread_setcancelstate is not defined to be async-signal-safe. */
@@ -303,7 +308,7 @@ STATIC void GC_restart_handler(int sig)
 # endif
 
   if (sig != GC_sig_thr_restart)
-    ABORT("Bad signal in suspend_handler");
+    ABORT("Bad signal in restart handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
     sem_post(&GC_restart_ack_sem);

@@ -17,7 +17,7 @@ old_library='libcord.a'
 inherited_linker_flags=' '
 
 # Libraries that this one depends upon.
-dependency_libs=' /Users/giuseppemendola/Desktop/ht/bdwgc/libgc.la -lpthread'
+dependency_libs=' 5/Compilers/ProjectPartfunf/runtime/bdwgc/libgc.la /Users/giuseppemendola/Desktop/Courses/Semester_7/Atelier -lpthread'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
