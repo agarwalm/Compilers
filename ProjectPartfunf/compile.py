@@ -25,6 +25,7 @@ variables = []
 envRefs = []
 
 lambdaAssigns = {}
+functionTypes = {}
 
 nested_if = False
 or_if = False
@@ -88,6 +89,7 @@ def compile():
 	
 	
 	print '%struct.Hashtable = type {}'
+	print '%struct.function = type { i8*}'
 
 	#	print '@.str = private unnamed_addr constant [3 x i8] c"%d\\00", align 1'
 	#	print '@.str1 = private unnamed_addr constant [4 x i8] c"%d\\0A\\00", align 1'
@@ -107,6 +109,10 @@ def compile():
 	
 	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
 	print 'declare i32 @htGet(%struct.Hashtable*, i8*)'
+	print 'declare %struct.function* @make_closure(i8*, i32)'
+	print 'declare i32 @htInsert(%struct.function*, i8*, i32*)'
+
+	
 	
 	#	print 'define i32 @print_int_nl(i32 %x) nounwind uwtable ssp { '
 	#	print '  %1 = alloca i32, align 4'
@@ -125,7 +131,7 @@ def compile():
 	print "define i32 @main() nounwind uwtable ssp {"
 	
 	#print "statements list after flattening: ", flatStmts
-#alloc(flatStmts)
+	alloc(flatStmts)
 	
 	#TODO: before generating the llvm code from the statements,
 	#iterate over the flatStmts list and generate
@@ -137,9 +143,9 @@ def compile():
 	
 	
 	
-#	for s in flatStmts:
-#		
-#		astToLLVM(s, None)
+	for s in flatStmts:
+		
+		astToLLVM(s, None)
 	
 	#output what you need for the end of the main function in the .ll file
 	print "	 "+"ret i32 0"
@@ -303,7 +309,7 @@ def closureConversion(n):
 			tempBody.append(newBodyPass(env, a, c))
 		b = ConvertedLambda(env, n.argnames, tempBody)
 
-		d = MakeClosure(b, MakeEnv(make_env))
+		d = MakeClosure(b, MakeEnv(make_env,env))
 		return d
 	else:
 		return n
@@ -589,9 +595,7 @@ def boxingPass(n):
 		#if the left and right are integers, they will be boxed.
 		#if they are names, their values have already been boxed.
 		tempL = boxingPass(n.left)
-		print "l: ", tempL
 		tempR = boxingPass(n.right)
-		print "r: ", tempL
 		#to unbox, shift right by 2 for both bools and ints
 		n.left= ConvertToInt(tempL)
 		n.right = ConvertToInt(tempR)
@@ -1212,7 +1216,7 @@ def alloc(flatList):
 			lst.append(element.name.name)
 	
 	for element in lst:
-		print "	 "+element + " = alloca i32, align 4"
+		print "	 "+genSymFromVar(element) + " = alloca i32, align 4"
 		variables = lst
 
 
@@ -1236,17 +1240,29 @@ def funcDefs():
 	print "\n; defining all of the functions"
 	
 	for k in lambdaAssigns.keys():
-		tempParams = "(%struct.Hashtable* %env)"
+		
+		typeStore = "(%struct.Hashtable*"
+		
+		tempParams = "(%struct.Hashtable* %env"
 		if len(lambdaAssigns[k].argnames) != 0:
 			tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)+", i32 "+lambdaAssigns[k].argnames[0]
+			typeStore = "(%struct.Hashtable* , i32"
 		for i in range(1, len(lambdaAssigns[k].argnames)):
 			tempParams += ", i32 "+lambdaAssigns[k].argnames[i]
+			typeStore += ", i32"
+
 		tempParams += ")"
+		typeStore += ")"
 		print "define i32 @"+k+tempParams+" nounwind uwtable ssp {"
 		alloc(lambdaAssigns[k].code)
 		for code in lambdaAssigns[k].code:
 			astToLLVM(code,genSym())
 		print "}"
+
+		funcType = "i32 "+typeStore
+		functionTypes[k] = funcType
+
+		
 
 
 		
@@ -1289,8 +1305,17 @@ def astToLLVM(ast, x):
 
 	
 	elif isinstance(ast, MakeClosure):
-		a = CallFunc(Name("make_closure"), [astToLLVM(ast.fun,x), d])
-		codegen_callfunc(a,x)
+		tempstring = functionTypes[ast.fun.name]+"* @"+ast.fun.name
+		bitcast = "i8* bitcast ("+ tempstring+" to i8*)"
+		
+		closure = CallFunc(Name("make_closure"), [Name(bitcast), Name("i32 "+str(len(ast.env.map)))])
+		b = genSym()
+		codegen_callfunc(closure, b)
+		for key in ast.env.map:
+			tempVarStringParam = "i8* getelementptr inbounds (["+str(len(key)-1)+" x i8]* @.str_"+ast.env.name+"_"+key[2:]+", i32 0, i32 0)"
+			m = CallFunc(Name("htInsert"), [Name("%struct.function* "+b), Name(tempVarStringParam), Name("i32* "+genSymFromVar(ast.env.map[key].name))])
+			c = genSym()
+			codegen_callfunc(m, c)
 		
 	
 	#when you encounter an EnvRef, you look up the value of the free variable in the correct hash table
@@ -1313,7 +1338,10 @@ def astToLLVM(ast, x):
 		return codegen_boolExp(ast, x, ast.flag)
 	
 	elif isinstance(ast, Tag):
-		return codegen_tag(ast, x)
+		if ast.flag == 'closure':
+			astToLLVM(ast.node, x)
+		else:
+			return codegen_tag(ast, x)
 	
 	elif isinstance(ast, ConvertToInt):
 		return codegen_toint(ast,x)
@@ -1740,8 +1768,14 @@ def codegen_callfunc(ast,x):
 
 	
 	a = genSym()
-	output_call(x,"i32",ast.node.name,tempargs,"")
-	if ast.node.name != "htGet":
+	if ast.node.name == "make_closure":
+		output_call(x,"%struct.function* (i8*, i32)*",ast.node.name,tempargs,"")
+
+	elif ast.node.name == "htInsert":
+		output_call(x,"i32 (%struct.function*, i8*, i32*)*", ast.node.name, tempargs,"")
+	else:
+		output_call(x,"i32",ast.node.name,tempargs,"")
+	if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
 		output_store(a,x)
 
 
