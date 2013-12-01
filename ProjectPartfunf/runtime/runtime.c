@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <gc.h>
+#include "gc.h"
 
 int input ()
 {
@@ -29,72 +29,8 @@ int print_int_nl(int x){
 }
 
 
-//Env functions
-// Hashtable* make_env(){
-//     return createHt(16);
-// }
-
-//closure
-typedef struct function{
-    void* func_ptr;
-    Hashtable* free_vars;
-}function;
-
-// function* make_closure(void* func_ptr,Hashtable* free_vars){
-
-//     function f= function GC_malloc(sizeof(function));
-//     f.func_ptr=func_ptr;
-//     f.free_vars=createHt(16);
-//     return f;
-// }
 
 
-function* make_closure(void* func_ptr,int size){
-
-    function f= function GC_malloc(sizeof(function));
-    f->func_ptr=func_ptr;
-    f->free_vars=createHt(size);
-    return f;
-}
-
-int getFreeVar(function* func_ptr, char* var){
-    return htGet(func_ptr->free_vars,var);
-}
-
-void insertFreeVar(function* func_ptr, char* var, int value){
-	htInsert(func_ptr->free_vars, var, value);
-}
-
-void* get_func_ptr(function f){
-	return f->func_ptr;
-} 
-
-Hashtable* get_free_vars(function* func_ptr){
-	return func_ptr->free_vars;
-}
-
-//to be defined
-
-void closure_call(){
-
-}
-
-//Hashmap implementation
-int main(int argc,char **argv){
-	void* p;
-	function* f=make_closure(p,16);
-	char* x="envx"
-	char* y="envy"
-	char* z="envz"
-	insertFreeVar(f,x,1);
-	insertFreeVar(f,y,2);
-	insertFreeVar(f,z,3);
-	int x1=getFreeVar(f,x);
-	int y1=getFreeVar(f,y);
-	int z1=getFreeVar(f,z);
-
-
-}
 
 
 typedef struct Entry{
@@ -196,7 +132,73 @@ int htGet(Hashtable *ht,char *key){
 	}
 }
 
-x
+//Env functions
+// Hashtable* make_env(){
+//     return createHt(16);
+// }
+
+//closure
+typedef struct function{
+    void* func_ptr;
+    Hashtable* free_vars;
+}function;
+
+// function* make_closure(void* func_ptr,Hashtable* free_vars){
+
+//     function f= function GC_malloc(sizeof(function));
+//     f.func_ptr=func_ptr;
+//     f.free_vars=createHt(16);
+//     return f;
+// }
+
+
+ function *make_closure(void* func_ptr,int size){
+    function *f=(function *) GC_malloc(sizeof( function));
+    f->func_ptr=func_ptr;
+    f->free_vars=createHt(size);
+    return f;
+}
+
+int getFreeVar( function* func_ptr, char* var){
+    return htGet(func_ptr->free_vars,var);
+}
+
+void insertFreeVar( function* func_ptr, char* var, int value){
+	htInsert(func_ptr->free_vars, var, value);
+}
+
+void* get_func_ptr( function f){
+	return f.func_ptr;
+} 
+
+Hashtable* get_free_vars( function* func_ptr){
+	return func_ptr->free_vars;
+}
+
+//to be defined
+
+void closure_call(){
+
+}
+
+//Hashmap implementation
+
+int main(int argc,char **argv){
+	GC_INIT();
+	void* p;
+	function* f=make_closure(p,16);
+	 char* x="envx";
+	 char* y="envy";
+	 char* z="envz";
+	 insertFreeVar(f,x,1);
+	insertFreeVar(f,y,2);
+	 insertFreeVar(f,z,3);
+	 int x1=getFreeVar(f,x);
+	 int y1=getFreeVar(f,y);
+	 int z1=getFreeVar(f,z);
+	 printf("%d , %d , %d\n",x1,y1,z1);
+	return 0;
+}
 
 // int main( int argc, char **argv ) {
 // 	GC_init();
