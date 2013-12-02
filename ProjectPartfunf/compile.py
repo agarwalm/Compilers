@@ -521,6 +521,10 @@ def boxingPass(n):
 		return n
 
 	elif isinstance(n, CallFunc):
+		tempArgs = []
+		for i in n.args:
+			tempArgs.append(ConvertToInt(boxingPass(i)))
+		n.args = tempArgs
 		return n
 
 	elif isinstance(n, EnvRef):
@@ -1247,8 +1251,9 @@ def funcDefs():
 	
 	print "\n; defining all of the functions"
 	
+	funcToTempparams = {}
+	
 	for k in lambdaAssigns.keys():
-		
 		typeStore = "(%struct.Hashtable*"
 		
 		tempParams = "(%struct.Hashtable* %env"
@@ -1261,14 +1266,20 @@ def funcDefs():
 
 		tempParams += ")"
 		typeStore += ")"
-		print "define i32 @"+k+tempParams+" nounwind uwtable ssp {"
-		alloc(lambdaAssigns[k].code)
-		for code in lambdaAssigns[k].code:
-			astToLLVM(code,genSym())
-		print "}"
+		
+		funcToTempparams[k] = tempParams
 
 		funcType = "i32 "+typeStore
 		functionTypes[k] = funcType
+		print "\n;FUNCTYPE: ", funcToTempparams
+
+	for j in lambdaAssigns.keys():
+		print "\n; j is: ", j
+		print "define i32 @"+j+funcToTempparams[j]+" nounwind uwtable ssp {"
+		alloc(lambdaAssigns[j].code)
+		for code in lambdaAssigns[j].code:
+			astToLLVM(code,genSym())
+		print "}"
 
 		
 
