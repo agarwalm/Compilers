@@ -538,7 +538,7 @@ def boxingPass(n):
 		return tagged
 
 	elif isinstance(n, Return):
-		#n.value = boxingPass(n.value)
+		n.value = boxingPass(n.value)
 		return n
 	
 	
