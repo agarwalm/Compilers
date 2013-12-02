@@ -525,7 +525,7 @@ def boxingPass(n):
 		tempArgs = []
 		for i in n.args:
 			b = genSym()
-			tempArgs.append(Tag(i, "int"))
+			tempArgs.append(boxingPass(i))
 		n.args = tempArgs
 		return n
 
