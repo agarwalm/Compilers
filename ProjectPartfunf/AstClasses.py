@@ -435,12 +435,13 @@ class CallFuncClosure():
 		return "MakeClosure(%s, %s)" % (self.fun, self.env)
 
 class MakeEnv():
-	def __init__(self, map):
+	def __init__(self, map, name):
 		self.map = map
+		self.name = name
 	def __repr__(self):
-		return "MakeEnv(%s)" % (self.map)
+		return "MakeEnv(%s,%s)" % (self.map,self.name)
 	def __str__(self):
-		return "MakeEnv(%s)" % (self.map)
+		return "MakeEnv(%s,%s)" % (self.map, self.name)
 
 class EnvRef():
 	def __init__(self, env, name):
