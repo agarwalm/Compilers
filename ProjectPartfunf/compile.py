@@ -112,7 +112,7 @@ def compile():
 	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
 	print 'declare i32 @htGet(%struct.Hashtable*, i8*)'
 	print 'declare %struct.function* @make_closure(i8*, i32)'
-	print 'declare i32 @htInsert(%struct.function*, i8*, i32*)'
+	print 'declare i32 @insertFreeVar(%struct.function*, i8*, i32*)'
 	print 'declare %struct.Hashtable* @get_free_vars(%struct.function*)'
 
 	
@@ -1336,7 +1336,7 @@ def astToLLVM(ast, x):
 		
 		for key in ast.env.map:
 			tempVarStringParam = "i8* getelementptr inbounds (["+str(len(key)-1)+" x i8]* @.str_"+ast.env.name+"_"+key[2:]+", i32 0, i32 0)"
-			m = CallFunc(Name("htInsert"), [Name("%struct.function* "+b), Name(tempVarStringParam), Name("i32* "+genSymFromVar(ast.env.map[key].name))])
+			m = CallFunc(Name("insertFreeVar"), [Name("%struct.function* "+b), Name(tempVarStringParam), Name("i32* "+genSymFromVar(ast.env.map[key].name))])
 			c = genSym()
 			codegen_callfunc(m, c)
 		
@@ -1800,7 +1800,7 @@ def codegen_callfunc(ast,x):
 	if ast.node.name == "make_closure":
 		output_call(x,"%struct.function* (i8*, i32)*",ast.node.name,tempargs,"")
 
-	elif ast.node.name == "htInsert":
+	elif ast.node.name == "insertFreeVar":
 		output_call(x,"i32 (%struct.function*, i8*, i32*)*", ast.node.name, tempargs,"")
 	elif ast.node.name != "htGet":
 		#generate all the complicated weirdness you need to access the hashmap to pass as the first param to a function
