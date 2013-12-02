@@ -1347,7 +1347,7 @@ def astToLLVM(ast, x):
 		tempMapParam = "%struct.Hashtable* "+genSymFromVar(ast.env)
 		tempVarStringParam = "i8* getelementptr inbounds (["+str(len(ast.name)+1)+" x i8]* @.str_"+ast.env+"_"+ast.name+", i32 0, i32 0)"
 		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ] )
-		codegen_callfunc(e,d)
+		codegen_callfunc(e,x)
 		
 	
 	
@@ -1830,6 +1830,11 @@ def codegen_callfunc(ast,x):
 		output_call(d,"i32","func_"+ast.node.name," %struct.Hashtable* "+envMap+definedFuncArgs,"")
 		#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
 		output_store(d,x)
+
+	elif ast.node.name == "htGet":
+		q = genSym()
+		output_call(q, "i32 ",ast.node.name, tempargs, "" )
+		output_store(q,x)
 
 
 def output_load(tempvar, val):
