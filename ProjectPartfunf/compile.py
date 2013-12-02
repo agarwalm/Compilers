@@ -521,10 +521,10 @@ def boxingPass(n):
 		return n
 
 	elif isinstance(n, CallFunc):
-		tempArgs = []
-		for i in n.args:
-			tempArgs.append(ConvertToInt(i))
-		n.args = tempArgs
+#		tempArgs = []
+#		for i in n.args:
+#			tempArgs.append(ConvertToInt(i))
+#		n.args = tempArgs
 		return n
 
 	elif isinstance(n, EnvRef):
