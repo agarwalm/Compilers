@@ -112,6 +112,7 @@ def compile():
 	print 'declare i32 @htGet(%struct.Hashtable*, i8*)'
 	print 'declare %struct.function* @make_closure(i8*, i32)'
 	print 'declare i32 @htInsert(%struct.function*, i8*, i32*)'
+	print 'declare %struct.Hashtable* @get_free_vars(%struct.function*)'
 
 	
 	
@@ -1766,8 +1767,8 @@ def codegen_callfunc(ast,x):
 	tempargs = ""
 	definedFuncArgs = ""
 	tempName = "func_"+ast.node.name
-	if tempName in functionToClosure.keys():
-		definedFuncArgs = "%struct.Hashtable* "+functionToClosure[tempName]+"->env"
+#	if tempName in functionToClosure.keys():
+#		definedFuncArgs = "%struct.Hashtable* "+functionToClosure[tempName]+"->env"
 	
 	if len(ast.args)>0:
 		a = genSym()
@@ -1789,10 +1790,33 @@ def codegen_callfunc(ast,x):
 	elif ast.node.name == "htInsert":
 		output_call(x,"i32 (%struct.function*, i8*, i32*)*", ast.node.name, tempargs,"")
 	else:
+		#generate all the complicated weirdness you need to access the hashmap to pass as the first param to a function
+#		c = genSym()
+#		print c+" = alloca %struct.function*, align 8"
+#		print "   store %struct.function* "+functionToClosure[tempName]+", %struct.function** "+c+", align 8"
+#		e = genSym()
+#		print "   "+e+" = load %struct.function** "+c+", align 8"
+#		f = genSym()
+#		print "   "+f+" = getelementptr inbounds %struct.function* "+e+", i32 0, i32 0"
+#		g = genSym()
+#		print "    "+g+" = load i8** "+f+", align 8"
+#		h = genSym()
+#		print "    "+h+" = bitcast i8* "+g+" to i32 (i32, %struct.Hashtable*)*"
+#		i = genSym()
+#		print "    "+i+" = load %struct.function** "+c+", align 8"
+#		j = genSym()
+#		print "    "+j+" = getelementptr inbounds %struct.function* "+i+", i32 0, i32 1"
+#		env = genSym()
+#		print "   "+env+" = load %struct.Hashtable** "+j+", align 8"
+		
+		envMap = genSym()
+		output_call(envMap, "%struct.Hashtable* (%struct.function*)*", "get_free_vars", "%struct.function* "+functionToClosure[tempName], "")
+		
+		
 		d = genSym()
-		output_call(d,"i32","func_"+ast.node.name,definedFuncArgs,"")
+		output_call(d,"i32","func_"+ast.node.name," %struct.Hashtable* "+envMap+definedFuncArgs,"")
 		#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
-		output_store(a,d)
+		output_store(d,x)
 
 
 def output_load(tempvar, val):
