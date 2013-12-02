@@ -335,7 +335,7 @@ def newBodyPass(env, a, n):
 	
 	elif isinstance(n, Sub):
 		n.left = newBodyPass(env, a, n.left)
-		n.right = newBodyPass(enc, a, n.right)
+		n.right = newBodyPass(env, a, n.right)
 		return n
 	
 	elif isinstance(n, Mul):
@@ -1802,7 +1802,7 @@ def codegen_callfunc(ast,x):
 
 	elif ast.node.name == "htInsert":
 		output_call(x,"i32 (%struct.function*, i8*, i32*)*", ast.node.name, tempargs,"")
-	else:
+	elif ast.node.name != "htGet":
 		#generate all the complicated weirdness you need to access the hashmap to pass as the first param to a function
 #		c = genSym()
 #		print c+" = alloca %struct.function*, align 8"
