@@ -73,6 +73,7 @@ def compile():
 	boxingPass(ast);
 
 	print "\n\n; THE TAGGED AST: ", ast
+
 	
 	dictflatten(lambdaAssigns)
 #	print "; ",ast
@@ -521,11 +522,11 @@ def boxingPass(n):
 		return n
 
 	elif isinstance(n, CallFunc):
-#		tempArgs = []
-#		for i in n.args:
-#			tempArgs.append(ConvertToInt(i))
-#		n.args = tempArgs
-		return n
+		tempArgs = []
+		for i in n.args:
+			tempArgs.append(ConvertToInt(i))
+		n.args = tempArgs
+		return Tag(n, "int")
 
 	elif isinstance(n, EnvRef):
 		return n
