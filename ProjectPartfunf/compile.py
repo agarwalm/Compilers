@@ -524,7 +524,8 @@ def boxingPass(n):
 	elif isinstance(n, CallFunc):
 		tempArgs = []
 		for i in n.args:
-			tempArgs.append(ConvertToInt(i))
+			b = genSym()
+			tempArgs.append(Tag(i, "int"))
 		n.args = tempArgs
 		return Tag(n, "int")
 
