@@ -527,7 +527,7 @@ def boxingPass(n):
 			b = genSym()
 			tempArgs.append(Tag(i, "int"))
 		n.args = tempArgs
-		return Tag(n, "int")
+		return n
 
 	elif isinstance(n, EnvRef):
 		return n
@@ -538,7 +538,7 @@ def boxingPass(n):
 		return tagged
 
 	elif isinstance(n, Return):
-		n.value = boxingPass(n.value)
+		#n.value = boxingPass(n.value)
 		return n
 	
 	
