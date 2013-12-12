@@ -138,14 +138,12 @@ int htGet(Hashtable *ht,char *key){
 		return -1;
 	} 
 	else{
+		printf("%s: FOUND k = %s v = %d\n", __func__, key, entry->value);
 		return entry->value;
 	}
 }
 
-// //Env functions
-// // Hashtable* make_env(){
-// //     return createHt(16);
-// // }
+
 
 // //closure
 typedef struct function{
@@ -153,40 +151,55 @@ typedef struct function{
     Hashtable* free_vars;
 }function;
 
-// // function* make_closure(void* func_ptr,Hashtable* free_vars){
-
-// //     function f= function GC_malloc(sizeof(function));
-// //     f.func_ptr=func_ptr;
-// //     f.free_vars=createHt(16);
-// //     return f;
-// // }
 
 
- function *make_closure(void* func_ptr,int size){
-// 	if (!initialized) {
-//		GC_INIT();
-//		initialized = 1;
-//	}
+
+  int make_closure(void* func_ptr,int size){
+
     function *f=(function *) malloc(sizeof( function));
     f->func_ptr=func_ptr;
     f->free_vars=createHt(size);
-    return f;
+	// return f;
+	 
+	printf("%s:%p\n", __func__, f);
+    return (int)(((void *)f)+3);
 }
 
 int getFreeVar( function* func_ptr, char* var){
     return htGet(func_ptr->free_vars,var);
 }
 
-void insertFreeVar( function* func_ptr, char* var, int* value){
-	htInsert(func_ptr->free_vars, var, value);
+int insertFreeVar( int func_ptr, char* var, int* value){
+	function *fptr = (function *)(func_ptr - 3);
+	printf("%s:f = %p, k = %s, %d \n", __func__, fptr, var, *value);
+	htInsert(fptr->free_vars, var, value);
+	return 0;
 }
 
-void* get_func_ptr( function f){
-	return f.func_ptr;
+void* get_func_ptr( function* f){
+	// TODO : Fix me
+//	func -= 3;
+	printf("%s:%p\n", __func__, f);
+	return f->func_ptr;
 } 
 
-Hashtable* get_free_vars( function* func_ptr){
-	return func_ptr->free_vars;
+void *get_func_ptr1(int f){
+	function *f1 = (function *)(f - 3);
+	return get_func_ptr(f1);
+}
+
+void exception(char *message)
+{
+	fputs(stderr, message);
+	exit(-1);
+}
+
+Hashtable* get_free_vars( int func_ptr){
+	function *fptr;
+	if ((func_ptr & 3) != 3)
+		exception("EXCEPTION: Trying to call non-function");
+	fptr = (function *)(func_ptr - 3);
+	return fptr->free_vars;
 }
 
 //to be defined
@@ -195,68 +208,3 @@ void closure_call(){
 
 }
 
-
-// //Hashmap implementation
-
-// int main(int argc,char **argv){
-// 	GC_INIT();
-// 	void* p;
-// 	function* f=make_closure(p,16);
-// 	 char* x="envx";
-// 	 char* y="envy";
-// 	 char* z="envz";
-// 	 insertFreeVar(f,x,1);
-// 	insertFreeVar(f,y,2);
-// 	 insertFreeVar(f,z,3);
-// 	 int x1=getFreeVar(f,x);
-// 	 int y1=getFreeVar(f,y);
-// 	 int z1=getFreeVar(f,z);
-// 	 printf("%d , %d , %d\n",x1,y1,z1);
-// 	return 0;
-// }
-
-// int main( int argc, char **argv ) {
-// 	GC_init();
- 
-// 	Hashtable *hashtable = createHt( 20 );
-// 	htInsert(hashtable,"key11",1);
-// 	htInsert(hashtable,"key21",2);
-// 	htInsert(hashtable,"key31",3);
-// 	htInsert(hashtable,"key41",4);
-// 	htInsert(hashtable,"key51",5);
-
-// 	printf("%d\n", htGet(hashtable, "key11"));
-// 	printf("%d\n", htGet(hashtable, "key21"));
-// 	printf("%d\n", htGet(hashtable, "key31"));
-// 	printf("%d\n", htGet(hashtable, "key41"));
-// 	printf("%d\n", htGet(hashtable, "key51"));
-// 	printf("%d\n", htGet(hashtable, "key61"));
-
-
-//  	int i;
-//  	char dig;
-//  	char str[6];
-//  	for(i=0; i<40; i++){
-//  		dig = (char)(((int)'0')+i);
-//  		strcpy(str,"key");
-//  		int len = strlen(str);
-//         str[len] = dig;
-//         str[len+1] = '\0';
-// 		htInsert(hashtable,str,i);
-// 	}
-
-// 	//htDelete(hashtable, "k4");
-//  	 for (i=0;i<41;i++){
-//  		dig = (char)(((int)'0')+i);
-//  		strcpy(str,"key");
-//  		int len = strlen(str);
-//         str[len] = dig;
-//         str[len+1] = '\0';
-// 		printf("%d\n", htGet(hashtable, str));
-// 	}
-
- 
-// 	return 0;
-// }
-
-//int main(int argc,char **argv){return 0;}
