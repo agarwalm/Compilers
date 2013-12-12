@@ -358,6 +358,8 @@ def newBodyPass(env, a, n):
 		return n
 
 	elif isinstance(n, CallFunc):
+		if n.node.name == "input":
+			return n
 		if n.node.name in a:
 			n.node = EnvRef(env, n.node.name)
 			global envRefs
@@ -496,6 +498,8 @@ def boxingPass(n):
 		return n
 
 	elif isinstance(n, CallFunc):
+		if n.node.name == "input":
+			return Tag(n, "int")
 		tempArgs = []
 		for i in n.args:
 			b = genSym()
@@ -1442,6 +1446,8 @@ def astToLLVM(ast, x):
 	elif isinstance(ast, CallFunc):
 		if isinstance(ast.node, EnvRef):
 			return codegen_freeVar_callfunc(ast,x)
+		elif ast.node.name == "input":
+			return codegen_input(ast,x)
 		return codegen_callfunc(ast, x)
 	
 	else:
@@ -1855,6 +1861,12 @@ def codegen_freeVar_callfunc(ast,x):
 	output_call_point(e,"i32",c," %struct.Hashtable* "+d+definedFuncArgs,"")
 	output_store(e,x);
 
+
+def codegen_input(ast,x):
+	a = genSym()
+	output_call(a,"i32","input","","")
+	output_store(a,x)
+	
 
 
 	

@@ -488,9 +488,9 @@ def p_simple_statement(p):
 #	'statement : print name'
 #	p[0] = node.Printnl([p[2]])
 
-#def p_input_exp(p):
-#	'expression : input oparen parameters cparen'
-#	p[0] = node.CallFunc(node.Name(p[1]),p[3])
+def p_input_exp(p):
+	'expression : input oparen parameters cparen'
+	p[0] = node.CallFunc(node.Name(p[1]),p[3])
 
 def p_single_param(p):
 	'parameters : expression'
@@ -813,7 +813,7 @@ def getAST():
 	file = sys.argv[1]
 	stream = open(file)
 	contents = stream.read()
-	#lex.runmain(lexer)
+	lex.runmain(lexer)
 	ast=yacc.parse(contents, lexer)
 	return ast
 
