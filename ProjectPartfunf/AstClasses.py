@@ -84,12 +84,13 @@ class CallFunc:
 		return "CallFunc(%s,%s)" % (self.node,self.args)
 
 class Const:
-	def __init__(self,value):
+	def __init__(self,value,flag):
 		self.value=value
+		self.flag = flag
 	def __repr__(self):
-		return "Const(%s)" % (self.value)
+		return "Const(%s, %s)" % (self.value, self.flag)
 	def __str__(self):
-		return "Const(%s)" % (self.value)
+		return "Const(%s, %s)" % (self.value, self.flag)
 
 class NoneNode:
 	def __init__(self, value):
@@ -243,7 +244,7 @@ class UnaryAdd:
 	def __init__(self,expr):
 		self.expr=expr
 	def __repr__(self):
-		return "UnaryAdd()"
+		return "UnaryAdd(%s)" % (self.expr)
 	def __str__(self):
 		return "UnaryAdd(%s)" % (self.expr)
 
@@ -469,6 +470,18 @@ class Apply():
 		return "Apply(%s, %s)" % (self.fun, self.args)
 	def __str__(self):
 		return "Apply(%s, %s)" % (self.fun, self.args)
+
+class EOF():
+	def __init__(self,val):
+		self.val = val
+
+	def __repr__(self):
+		return "EOF()" 
+	def __str__(self):
+		return "EOF()"
+
+
+
 	
 		
 

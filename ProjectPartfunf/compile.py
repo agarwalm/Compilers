@@ -24,6 +24,7 @@ flatStmts = []
 variables = []
 envRefs = []
 functionCalls = []
+varsAsIfChecks = []
 
 lambdaAssigns = {}
 functionTypes = {}
@@ -117,6 +118,10 @@ def compile():
 	print 'declare i32 @insertFreeVar(i32, i8*, i32*)'
 	print 'declare %struct.Hashtable* @get_free_vars(i32)'
 	print 'declare i8* @get_func_ptr1(i32)'
+	print 'declare i32 @bitwise_and(i32,i32)'
+	print 'declare i32 @bitwise_or(i32,i32)'
+	print 'declare i32 @bitwise_xor(i32,i32)'
+	print 'declare i32 @logical_and(i32,i32)'
 
 	
 	
@@ -511,7 +516,7 @@ def boxingPass(n):
 		return n
 	
 	elif isinstance(n, Not):
-		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
+		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0, "int"), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
 		tagged.flag = "bool"
 		return tagged
 
@@ -539,16 +544,13 @@ def boxingPass(n):
 			return box
 		
 		else:
-			#a boolean expression should untag each side of the boolean operator and then
-			#tag the result
+
 			tempL = boxingPass(n.left)
 			tempR = boxingPass(n.right)
-			#untag all by shifting left 2 (booleans treated as integers in this case)
+
 			n.left = ConvertToInt(tempL)
 			n.right = ConvertToInt(tempR)
-			#to Tag, create a Tag object with bool flag because we tag ints differently than
-			#booleans. The actual tagging occurs at runtime
-			#the result will always be a boolean
+
 			box = Tag(n, "bool")
 			return box
 	
@@ -559,7 +561,8 @@ def boxingPass(n):
 	
 	elif isinstance(n, UnarySub) or isinstance(n,UnaryAdd):
 		expression = boxingPass(n.expr)
-		n.expr = expression
+		tempExp = Tag(expression.node, "int")
+		n.expr = tempExp
 		return n
 	
 	elif isinstance(n, Invert):
@@ -596,19 +599,27 @@ def boxingPass(n):
 	elif isinstance(n, Bitor) or isinstance(n, Bitand) or isinstance(n, Bitxor):
 		tempL = boxingPass(n.left)
 		tempR = boxingPass(n.right)
-		if isinstance(n.left,Bool):
-			n.left=ConvertToBool(tempL)
-		else:
-			n.left=ConvertToInt(tempL)
-		if isinstance(n.right,Bool):
-			n.right=ConvertToInt(tempR)
-		else:
-			n.right=ConvertToInt(tempR)
-		
-		box=Tag(n,"int")
-		return box
+#		if isinstance(n.left,Bool):
+#			n.left=ConvertToBool(tempL)
+#		else:
+#			n.left=ConvertToInt(tempL)
+#		if isinstance(n.right,Bool):
+#			n.right=ConvertToInt(tempR)
+#		else:
+#			n.right=ConvertToInt(tempR)
+#		
+#		box=Tag(n,"int")
+#		return box
+
+		n.left = tempL
+		n.right = tempR
+		return n
 	
 	elif isinstance(n, IfNode):
+		if isinstance(n.expr, Name):
+			varsAsIfChecks.append(genSymFromVar(n.expr.name))
+		if isinstance(n.expr, Const):
+			n.expr.flag = "check"
 		n.expr = boxingPass(n.expr)
 		for i in range(0,len(n.nodes)):
 			n.nodes[i] = boxingPass(n.nodes[i])
@@ -780,6 +791,9 @@ def flattenStmt(n):
 	elif isinstance(n, IfNode):
 		#we will modify the IfNode to form first line of the example in the notes:
 		#If not cond goto F:
+
+						
+		
 		n.expr = flattenExp(n.expr, genSym())
 		f = genLabel("F")
 		t = genLabel("T")
@@ -992,7 +1006,7 @@ def flattenExp(n, x):
 			tempright = n.right
 			#print "i am tempright", tempright
 			templeft = n.left
-			n.right = ConvertToInt(Tag(Const(0), "int"))
+			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
 			n.left = ConvertToInt(n.left)
 			n.op = "!="
 			n.flag = "check"
@@ -1000,11 +1014,18 @@ def flattenExp(n, x):
 			variables.append(var)
 			a = genSym()
 			b = genSym()
+			if isinstance(tempright, Name):
+				a= genSymFromVar(tempright.name)
+			
+			if isinstance(templeft, Name):
+				b= genSymFromVar(templeft.name)
+				
 			print "; tr:",tempright
 			flattenExp(tempright, a)
 			print "; left:",templeft
 			flattenExp(templeft, b)
 			print "; got here!"
+	
 			r = Assign(AssName(var), Name(a))
 			variables.append(a)
 			
@@ -1033,7 +1054,7 @@ def flattenExp(n, x):
 			
 			tempright = n.right
 			templeft = n.left
-			n.right = ConvertToInt(Tag(Const(0), "int"))
+			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
 			n.left = ConvertToInt(n.left)
 			n.op = "!="
 			n.flag = "check"
@@ -1124,8 +1145,8 @@ def flattenExp(n, x):
 		#		flatStmts.append(temp)
 		#		return x
 		
-		flattenExp(boxingPass(Add(t1,Const(1))),b)
-		flattenExp(boxingPass(Sub(Const(0),Name(b))),x)
+		flattenExp(boxingPass(Add(t1,Const(1, "int"))),b)
+		flattenExp(boxingPass(Sub(Const(0, "int"),Name(b))),x)
 		return x
 	
 	elif isinstance(n, CallFunc):
@@ -1462,7 +1483,22 @@ def astToLLVM(ast, x):
 
 def codegen_assign_const(ast,x):
 	print"\n ; storing ", ast.expr.value," in ",x,"\n"
-	output_store(str(ast.expr.value),x)
+	val = astToLLVM(ast.expr,x)
+	if ast.expr.flag == "check":
+			
+		print"\n ; boolean,  ", ast.expr," is a check in an IfNode \n"
+			
+		global current_ifcheck
+		a = genSym();
+		print "	 "+a + " = alloca i1, align 4"
+		output_istore(val,a)
+		b = genSym()
+		output_iload(b,a)
+		current_ifcheck = b
+
+			
+	else:
+			output_store(str(ast.expr.value),x)
 
 def codegen_assign_bool(ast,x):
 	print"\n ; assigning boolean  ", ast.expr," to ",x,"\n"
@@ -1499,21 +1535,45 @@ def codegen_tag(ast,x):
 	#	print "	 "+c + " = alloca i32, align 4"
 	if isinstance(ast.node, Const):
 		output_store(str(ast.node.value),x)
+		
+		if ast.node.flag == "check":
+			print"\n ; const,  ", ast.node," is a check in an IfNode \n"
+			p = genSym()
+			e = genSym()
+			print "	 "+p + " = alloca i32, align 4"
+			output_load(e,x)
+			output_store(e,p)
+			global current_ifcheck
+			current_ifcheck = p
+			print ";CURRENT IF CHECK: ",p
+
+		
 		#	output_store(c,x)
 		a = genSym();
 		print "	 "+a + " = alloca i32, align 4"
 		output_store(str(2),a)
 		
 		astToLLVM(LeftShift(Name(x), Name(a)), x)
-		if ast.flag == "int":
+		if ast.flag == "bool":
 			return
-		elif ast.flag == "bool":
-			b = genSym()
-			print "	 "+b + " = alloca i32, align 4"
-			output_store(str(1),b)
-			astToLLVM(Bitor(Name(x), Name(b)), x)
+#		elif ast.flag == "bool":
+#			b = genSym()
+#			print "	 "+b + " = alloca i32, align 4"
+#			output_store(str(1),b)
+#			astToLLVM(Bitor(Name(x), Name(b)), x)
+
+		if ast.node.flag == "check":
+			astToLLVM(ConvertToInt(Name(x)),x)
+			print ";GOT IN HERE!"
+			q = genSym()
+			k = genSym()
+			
+			output_load(q,current_ifcheck)
+			print "	 "+k+" = trunc i32 "+q+" to i1"
+			current_ifcheck = k
+			print " "
 	
-	if isinstance(ast.node, Bool):
+	elif isinstance(ast.node, Bool):
 		d = genSym()
 		output_store(str(ast.node.value),x)
 		
@@ -1609,40 +1669,71 @@ def codegen_boolExp(ast,x, flag):
 	output_load(b, astToLLVM(ast.right,x))
 	c = genSym()
 	d = genSym()
-	if ast.op == "<":
-		print  "  "+c+" = icmp slt i32 "+a+", "+b
-	elif ast.op == ">":
-		print  "  "+c+" = icmp sgt i32 "+a+", "+b
-	elif ast.op == "==":
-		print "   "+c+" = icmp eq i32 "+a+", "+b
-	elif ast.op == "<=":
-		print "   "+c+" = icmp sle i32 "+a+", "+b
-	elif ast.op == ">=":
-		print "   "+c+" = icmp sge i32 "+a+", "+b
-	elif ast.op == "!=":
-		print "   "+c+" = icmp ne i32 "+a+", "+b
 	
-	if flag == "check":
-		global current_ifcheck
-		current_ifcheck = c
 	
+	if ast.op == "and":
+		output_call(c, "i32 ", "logical_and","i32 "+a+", i32 "+b,"")
+		output_store(c,x)
+		
+		
+		if flag == "check":
+			global current_ifcheck
+			current_ifcheck = c
 	
 	else:
+
+	
+		if ast.op == "<":
+			print  "  "+c+" = icmp slt i32 "+a+", "+b
+		elif ast.op == ">":
+			print  "  "+c+" = icmp sgt i32 "+a+", "+b
+		elif ast.op == "==":
+			print "   "+c+" = icmp eq i32 "+a+", "+b
+		elif ast.op == "<=":
+			print "   "+c+" = icmp sle i32 "+a+", "+b
+		elif ast.op == ">=":
+			print "   "+c+" = icmp sge i32 "+a+", "+b
+		elif ast.op == "!=":
+			print "   "+c+" = icmp ne i32 "+a+", "+b
+		
+		if flag == "check":
+			global current_ifcheck
+			current_ifcheck = c
 		
 		
-		print "	 "+d+" = zext i1 "+c+" to i32"
-		print " "
-		output_store(d,x)
+		else:
+			
+			
+			print "	 "+d+" = zext i1 "+c+" to i32"
+			print " "
+			output_store(d,x)
 
 
 
 def codegen_if(ast,x):
-	
 	print"\n ; generating code for ,  ", ast ," \n"
+
+	if ast.expr in varsAsIfChecks:
+		a = genSym()
+		b = genSym()
+		print "	 "+a + " = alloca i32, align 4"
+		print "	 "+b + " = alloca i32, align 4"
+		output_store("2",a)
+		astToLLVM(RightShift(Name(ast.expr),Name(a)),b)
+		k = genSym()
+		d = genSym()
+		output_load(d, b)
+		print "	 "+k+" = trunc i32 "+d+" to i1"
+		print "   br i1 "+k+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
+		print " "
+		
+		
 	
-	global current_ifcheck
-	print "   br i1 "+current_ifcheck+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
-	print " "
+	else:
+	
+		global current_ifcheck
+		print "   br i1 "+current_ifcheck+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
+		print " "
 
 
 def codegen_label(ast):
@@ -1661,7 +1752,22 @@ def codegen_binop(ast,x, op):
 	output_load(a, astToLLVM(ast.left,x))
 	output_load(b, astToLLVM(ast.right,x))
 	c = genSym()
-	output_operation(c,a,b,op)
+
+	if op == "and":
+
+		output_call(c, "i32 ", "bitwise_and","i32 "+a+", i32 "+b,"")
+	
+	elif op == "or":
+		output_call(c, "i32 ", "bitwise_or","i32 "+a+", i32 "+b,"")
+			
+	elif op == "xor":
+		output_call(c, "i32 ", "bitwise_xor","i32 "+a+", i32 "+b,"")
+			
+	
+	else:
+	
+		output_operation(c,a,b,op)
+	
 	#stores contents of c in x
 	output_store(c,x)
 

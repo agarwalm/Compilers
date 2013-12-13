@@ -455,6 +455,14 @@ def p_module(p):
 	'module : stmt'
 	p[0] = node.Module(p[1])
 
+def p_module_newl(p):
+	'module : newline module'
+	p[0] = node.Module(p[2])
+
+def p_module_empty(p):
+	'module :  '
+	p[0] = node.EOF(None)
+
 
 def p_stmt(p):
 	'stmt : statement_list'
@@ -766,7 +774,7 @@ def p_exp_none(t):
 
 def p_const_rule(t):
 	'num : integer'
-	t[0] = node.Const(t[1])
+	t[0] = node.Const(t[1],None)
 
 
 
@@ -792,6 +800,8 @@ def p_boolean(t):
 	elif t[1] == "False":
 		t[0] = node.Bool(0, None)
 
+
+
 def p_error(t):
 	sys.exit('Illegal P0 operation')
 
@@ -813,7 +823,7 @@ def getAST():
 	file = sys.argv[1]
 	stream = open(file)
 	contents = stream.read()
-	lex.runmain(lexer)
+	#lex.runmain(lexer)
 	ast=yacc.parse(contents, lexer)
 	return ast
 
