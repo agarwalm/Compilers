@@ -99,10 +99,10 @@ int bitwise_and(int l, int r){
 
 	else
 	{
-		printf("bool!");
+		//printf("bool!");
 		int temp = solution <<2;
 		int temp2 = temp ^ 1;
-		printf("solution: %d ",temp2);
+		//printf("solution: %d ",temp2);
 		return temp2;
 		
 		
@@ -113,23 +113,23 @@ int bitwise_and(int l, int r){
 int bitwise_or(int l, int r){
 	
 	int right = r >> 2;
-	printf("r: %d ",r);
+	//printf("r: %d ",r);
 	int left = l >> 2;
-	printf("l: %d ",l);
+	//printf("l: %d ",l);
 	int solution = right | left;
 	
 	if (l&3 == 0 | r&3 == 0) {
-		printf("int!");
+		//printf("int!");
 		return solution << 2;
 		
 	}
 	
 	else
 	{
-		printf("bool!");
+		//printf("bool!");
 		int temp = solution <<2;
 		int temp2 = temp ^ 1;
-		printf("solution: %d ",temp2);
+		//printf("solution: %d ",temp2);
 		return temp2;
 		
 		
@@ -140,23 +140,23 @@ int bitwise_or(int l, int r){
 int bitwise_xor(int l, int r){
 	
 	int right = r >> 2;
-	printf("r: %d ",r);
+	//printf("r: %d ",r);
 	int left = l >> 2;
-	printf("l: %d ",l);
+	//printf("l: %d ",l);
 	int solution = right ^ left;
 	
 	if (l&3 == 0 | r&3 == 0) {
-		printf("int!");
+		//printf("int!");
 		return solution << 2;
 		
 	}
 	
 	else
 	{
-		printf("bool!");
+		//printf("bool!");
 		int temp = solution <<2;
 		int temp2 = temp ^ 1;
-		printf("solution: %d ",temp2);
+		//printf("solution: %d ",temp2);
 		return temp2;
 		
 		
@@ -165,33 +165,102 @@ int bitwise_xor(int l, int r){
 }
 
 int logical_and(int l, int r){
+
 	
 	int right = r >> 2;
-	printf("r: %d ",r);
+
 	int left = l >> 2;
-	printf("l: %d ",l);
-	int solution = right && left;
+//printf("\nl: %d ",left);
+//	printf("\nr: %d ",right);
+	int solution = left && right;
+//	printf("\nTEST: %d ", 1 && 12);
 	
-	if (l&3 == 0 | r&3 == 0) {
-		printf("int!");
-		return solution << 2;
+	
+	//if the left side is 0 or False
+	if (left == 0){
+		
+		
+		if ((l&3) == 0){
+			return solution << 2;
+		}
+		
+		else {
+			return (solution<<2)^1;
+		}
 		
 	}
 	
-	else
-	{
-		printf("bool!");
-		int temp = solution <<2;
-		int temp2 = temp ^ 1;
-		printf("solution: %d ",temp2);
-		return temp2;
+	// if the left side is a non zero integer or True
+
 		
+	//if right is also an integer
+	if ((r&3)==0){
+		
+		return right<<2;
+	}
+	
+	//if right is a boolean
+	
+	else{
+		
+		return (right<<2)^1;
+	}
+	
+				
+
+}
+
+
+
+int logical_or(int l, int r){
+	
+	
+	int right = r >> 2;
+	
+	int left = l >> 2;
+	//printf("\nl: %d ",left);
+	//	printf("\nr: %d ",right);
+	int solution = left && right;
+	//	printf("\nTEST: %d ", 1 && 12);
+	
+	
+	//if the left side is 0 or False
+	if (left == 0){
+		
+		
+		if ((r&3) == 0){
+			return right << 2;
+		}
+		
+		else {
+			return (right<<2)^1;
+		}
 		
 	}
+	
+	// if the left side is a non zero integer or True
+	
+	
+	//if right is also an integer
+	if ((l&3)==0){
+		
+		return left<<2;
+	}
+	
+	//if right is a boolean
+	
+	else{
+		
+		return (left<<2)^1;
+	}
+	
+	
 	
 }
 
-Entry *createEntry(char *key, int *value){
+
+		
+	Entry *createEntry(char *key, int *value){
 	Entry *entry;
 //	if (!initialized) {
 //		GC_INIT();
@@ -246,7 +315,7 @@ int htGet(Hashtable *ht,char *key){
 		return -1;
 	} 
 	else{
-		printf("%s: FOUND k = %s v = %d\n", __func__, key, entry->value);
+		//printf("%s: FOUND k = %s v = %d\n", __func__, key, entry->value);
 		return entry->value;
 	}
 }
@@ -269,7 +338,7 @@ typedef struct function{
     f->free_vars=createHt(size);
 	// return f;
 	 
-	printf("%s:%p\n", __func__, f);
+	//printf("%s:%p\n", __func__, f);
     return (int)(((void *)f)+3);
 }
 
@@ -279,7 +348,7 @@ int getFreeVar( function* func_ptr, char* var){
 
 int insertFreeVar( int func_ptr, char* var, int* value){
 	function *fptr = (function *)(func_ptr - 3);
-	printf("%s:f = %p, k = %s, %d \n", __func__, fptr, var, *value);
+	//printf("%s:f = %p, k = %s, %d \n", __func__, fptr, var, *value);
 	htInsert(fptr->free_vars, var, value);
 	return 0;
 }
@@ -287,7 +356,7 @@ int insertFreeVar( int func_ptr, char* var, int* value){
 void* get_func_ptr( function* f){
 	// TODO : Fix me
 //	func -= 3;
-	printf("%s:%p\n", __func__, f);
+	//printf("%s:%p\n", __func__, f);
 	return f->func_ptr;
 } 
 

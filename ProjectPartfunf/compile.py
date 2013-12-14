@@ -122,6 +122,7 @@ def compile():
 	print 'declare i32 @bitwise_or(i32,i32)'
 	print 'declare i32 @bitwise_xor(i32,i32)'
 	print 'declare i32 @logical_and(i32,i32)'
+	print 'declare i32 @logical_or(i32,i32)'
 
 	
 	
@@ -985,107 +986,108 @@ def flattenExp(n, x):
 	elif isinstance(n,BoolExp):
 		variables.append(genSymFromVar(x))
 		
-		if (n.op != 'and') and (n.op != 'or'):
-			#generate symbols a and b
-			a = genSym()
-			b = genSym()
-			#use them to assign to constants (or if Names are the operands, will just return variable)
-			leftStmt = flattenExp(n.left, a )
-			rightStmt = flattenExp(n.right, b)
-			#now we use the same operator object n and just change its left and right values
-			n.left = Name(leftStmt)
-			n.right = Name(rightStmt)
-			#assign the add operation n to the varialbe x and append to the statements list
-			temp = Assign(AssName(x),n)
-			flatStmts.append(temp)
-			return x
+		#if (n.op != 'and') and (n.op != 'or'):
 		
-		elif n.op == 'and':
-			d = genSym()
-			e = genSym()
-			tempright = n.right
-			#print "i am tempright", tempright
-			templeft = n.left
-			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
-			n.left = ConvertToInt(n.left)
-			n.op = "!="
-			n.flag = "check"
-			var = genSymFromVar(x)
-			variables.append(var)
-			a = genSym()
-			b = genSym()
-			if isinstance(tempright, Name):
-				a= genSymFromVar(tempright.name)
-			
-			if isinstance(templeft, Name):
-				b= genSymFromVar(templeft.name)
-				
-			print "; tr:",tempright
-			flattenExp(tempright, a)
-			print "; left:",templeft
-			flattenExp(templeft, b)
-			print "; got here!"
-	
-			r = Assign(AssName(var), Name(a))
-			variables.append(a)
-			
-			l = Assign(AssName(var), Name(b))
-			variables.append(b)
-			
-			g = genSym()
-			print "; blah"
-			print "; ", flatStmts
-			print "; ifnode: ", IfNode(Tag(n, "bool"), [r], [l], "and" )
-			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l], "and" ))
-			print "; rawr"
-			#flatStmts.append(andIf)
-			
-			return x
+		#generate symbols a and b
+		a = genSym()
+		b = genSym()
+		#use them to assign to constants (or if Names are the operands, will just return variable)
+		leftStmt = flattenExp(n.left, a )
+		rightStmt = flattenExp(n.right, b)
+		#now we use the same operator object n and just change its left and right values
+		n.left = Name(leftStmt)
+		n.right = Name(rightStmt)
+		#assign the add operation n to the varialbe x and append to the statements list
+		temp = Assign(AssName(x),n)
+		flatStmts.append(temp)
+		return x
 		
-		
-		
-		elif n.op == 'or':
-			#
-			#			t = n.left.node.node
-			#			r = n.right.node.node
-			#global if_or
-			#if_or = True;
-			
-			
-			tempright = n.right
-			templeft = n.left
-			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
-			n.left = ConvertToInt(n.left)
-			n.op = "!="
-			n.flag = "check"
-			var = genSymFromVar(x)
-			variables.append(var)
-			
-			a = genSym()
-			b = genSym()
-			
-			print "; tr:",tempright
-			flattenExp(tempright, a)
-			print "; left:",templeft
-			flattenExp(templeft, b)
-			print "; got here!"
-			
-			r = Assign(AssName(var), Name(a))
-			
-			l = Assign(AssName(var), Name(b))
-			
-			orIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r], "or" ))
-			
-			e = specialEnd()
-			flatStmts.append(GoTo(e))
-			#end label for the end of the if statement (where you jump to if the condition is true)
-			endLabel = Label(e)
-			flatStmts.append(endLabel)
-			global endCount
-			endCount = 0;
-			
-			
-			return x
+#		elif n.op == 'and':
+#			d = genSym()
+#			e = genSym()
+#			tempright = n.right
+#			#print "i am tempright", tempright
+#			templeft = n.left
+#			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
+#			n.left = ConvertToInt(n.left)
+#			n.op = "!="
+#			n.flag = "check"
+#			var = genSymFromVar(x)
+#			variables.append(var)
+#			a = genSym()
+#			b = genSym()
+#			if isinstance(tempright, Name):
+#				a= genSymFromVar(tempright.name)
+#			
+#			if isinstance(templeft, Name):
+#				b= genSymFromVar(templeft.name)
+#				
+#			print "; tr:",tempright
+#			flattenExp(tempright, a)
+#			print "; left:",templeft
+#			flattenExp(templeft, b)
+#			print "; got here!"
+#	
+#			r = Assign(AssName(var), Name(a))
+#			variables.append(a)
+#			
+#			l = Assign(AssName(var), Name(b))
+#			variables.append(b)
+#			
+#			g = genSym()
+#			print "; blah"
+#			print "; ", flatStmts
+#			print "; ifnode: ", IfNode(Tag(n, "bool"), [r], [l], "and" )
+#			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l], "and" ))
+#			print "; rawr"
+#			#flatStmts.append(andIf)
+#			
+#			return x
+#		
+#		
+#		
+#		elif n.op == 'or':
+#			#
+#			#			t = n.left.node.node
+#			#			r = n.right.node.node
+#			#global if_or
+#			#if_or = True;
+#			
+#			
+#			tempright = n.right
+#			templeft = n.left
+#			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
+#			n.left = ConvertToInt(n.left)
+#			n.op = "!="
+#			n.flag = "check"
+#			var = genSymFromVar(x)
+#			variables.append(var)
+#			
+#			a = genSym()
+#			b = genSym()
+#			
+#			print "; tr:",tempright
+#			flattenExp(tempright, a)
+#			print "; left:",templeft
+#			flattenExp(templeft, b)
+#			print "; got here!"
+#			
+#			r = Assign(AssName(var), Name(a))
+#			
+#			l = Assign(AssName(var), Name(b))
+#			
+#			orIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r], "or" ))
+#			
+#			e = specialEnd()
+#			flatStmts.append(GoTo(e))
+#			#end label for the end of the if statement (where you jump to if the condition is true)
+#			endLabel = Label(e)
+#			flatStmts.append(endLabel)
+#			global endCount
+#			endCount = 0;
+#			
+#			
+#			return x
 	
 	
 	
@@ -1680,6 +1682,15 @@ def codegen_boolExp(ast,x, flag):
 			global current_ifcheck
 			current_ifcheck = c
 	
+	if ast.op == "or":
+		output_call(c, "i32 ", "logical_or","i32 "+a+", i32 "+b,"")
+		output_store(c,x)
+		
+		
+		if flag == "check":
+			global current_ifcheck
+			current_ifcheck = c
+	
 	else:
 
 	
@@ -1695,6 +1706,8 @@ def codegen_boolExp(ast,x, flag):
 			print "   "+c+" = icmp sge i32 "+a+", "+b
 		elif ast.op == "!=":
 			print "   "+c+" = icmp ne i32 "+a+", "+b
+
+
 		
 		if flag == "check":
 			global current_ifcheck
