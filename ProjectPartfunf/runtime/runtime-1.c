@@ -83,6 +83,114 @@ int hash(char *s,Hashtable *ht){
 	return h%ht->size;;
 }
 
+int bitwise_and(int l, int r){
+	
+	int right = r >> 2;
+	printf("r: %d ",r);
+	int left = l >> 2;
+	printf("l: %d ",l);
+	int solution = right & left;
+	
+	if (l&3 == 0 | r&3 == 0) {
+		printf("int!");
+		return solution << 2;
+
+	}
+
+	else
+	{
+		printf("bool!");
+		int temp = solution <<2;
+		int temp2 = temp ^ 1;
+		printf("solution: %d ",temp2);
+		return temp2;
+		
+		
+	}
+	
+}
+
+int bitwise_or(int l, int r){
+	
+	int right = r >> 2;
+	printf("r: %d ",r);
+	int left = l >> 2;
+	printf("l: %d ",l);
+	int solution = right | left;
+	
+	if (l&3 == 0 | r&3 == 0) {
+		printf("int!");
+		return solution << 2;
+		
+	}
+	
+	else
+	{
+		printf("bool!");
+		int temp = solution <<2;
+		int temp2 = temp ^ 1;
+		printf("solution: %d ",temp2);
+		return temp2;
+		
+		
+	}
+	
+}
+
+int bitwise_xor(int l, int r){
+	
+	int right = r >> 2;
+	printf("r: %d ",r);
+	int left = l >> 2;
+	printf("l: %d ",l);
+	int solution = right ^ left;
+	
+	if (l&3 == 0 | r&3 == 0) {
+		printf("int!");
+		return solution << 2;
+		
+	}
+	
+	else
+	{
+		printf("bool!");
+		int temp = solution <<2;
+		int temp2 = temp ^ 1;
+		printf("solution: %d ",temp2);
+		return temp2;
+		
+		
+	}
+	
+}
+
+int logical_and(int l, int r){
+	
+	int right = r >> 2;
+	printf("r: %d ",r);
+	int left = l >> 2;
+	printf("l: %d ",l);
+	int solution = right && left;
+	
+	if (l&3 == 0 | r&3 == 0) {
+		printf("int!");
+		return solution << 2;
+		
+	}
+	
+	else
+	{
+		printf("bool!");
+		int temp = solution <<2;
+		int temp2 = temp ^ 1;
+		printf("solution: %d ",temp2);
+		return temp2;
+		
+		
+	}
+	
+}
+
 Entry *createEntry(char *key, int *value){
 	Entry *entry;
 //	if (!initialized) {
