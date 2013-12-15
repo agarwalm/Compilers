@@ -30,6 +30,24 @@ int print_int_nl(int x){
 	return 0;
 }
 
+int tag_int(int i){
+	
+	return i<<2;
+	
+}
+
+int tag_bool(int b){
+	
+	return (b<<2)^1;
+	
+	
+}
+
+int untag (int t){
+	
+	return t>>2;
+}
+
 
 
 
@@ -86,15 +104,22 @@ int hash(char *s,Hashtable *ht){
 int bitwise_and(int l, int r){
 	
 	int right = r >> 2;
-	printf("r: %d ",r);
+//printf("r: %d ",r);
 	int left = l >> 2;
-	printf("l: %d ",l);
-	int solution = right & left;
-	
-	if (l&3 == 0 | r&3 == 0) {
-		printf("int!");
+//	printf("l: %d ",l);
+	int solution = left & right;
+//	printf("\n%d", l&3);
+	if ((l&3) == 0 ){
+		//printf("int!");
+//		printf("\nint: %d ",solution);
 		return solution << 2;
 
+	}
+	
+	else if ((r&3) == 0 ){
+		//printf("int!");
+//		printf("\nint: %d ",solution);
+		return solution << 2;
 	}
 
 	else
@@ -103,6 +128,7 @@ int bitwise_and(int l, int r){
 		int temp = solution <<2;
 		int temp2 = temp ^ 1;
 		//printf("solution: %d ",temp2);
+//		printf("\nbool: %d ",temp2);
 		return temp2;
 		
 		
@@ -116,9 +142,9 @@ int bitwise_or(int l, int r){
 	//printf("r: %d ",r);
 	int left = l >> 2;
 	//printf("l: %d ",l);
-	int solution = right | left;
+	int solution = left | right;
 	
-	if (l&3 == 0 | r&3 == 0) {
+	if ((l&3) == 0 || (r&3) == 0) {
 		//printf("int!");
 		return solution << 2;
 		
