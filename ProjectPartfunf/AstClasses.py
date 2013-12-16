@@ -75,13 +75,14 @@ class Bitxor:
 		return "Bitxor(%s, %s)" % (self.left,self.right)
 
 class CallFunc:
-	def __init__(self,node,args):
+	def __init__(self,node,args,flag):
 		self.node=node
 		self.args=args
+		self.flag = flag
 	def __repr__(self):
-		return "CallFunc(%s,%s)"%(self.node,self.args)
+		return "CallFunc(%s,%s,%s)"%(self.node,self.args,self.flag)
 	def __str__(self):
-		return "CallFunc(%s,%s)" % (self.node,self.args)
+		return "CallFunc(%s,%s,%s)" % (self.node,self.args,self.flag)
 
 class Const:
 	def __init__(self,value,flag):

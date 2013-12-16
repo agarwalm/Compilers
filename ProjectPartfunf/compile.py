@@ -310,7 +310,7 @@ def closureConversion(n):
 		return d
 
 	elif isinstance(n,Return):
-		d = Return(closureConversion(n.expr))
+		d = Return(closureConversion(n.value))
 		return d
 	
 	elif isinstance(n, Lambda):
@@ -534,14 +534,27 @@ def boxingPass(n):
 
 	elif isinstance(n, CallFunc):
 		if isinstance(n.node, CallFunc):
-			if n.node.node.name == "input":
-				return Tag(n.node, "int")
-			tempArgs = []
-			for i in n.node.args:
-				b = genSym()
-				tempArgs.append(boxingPass(i))
-			n.node.args = tempArgs
-			return n.node
+			n.node = boxingPass(n.node)
+			n.flag = "callVar"
+			return n
+		#			if n.node.node.name == "input":
+#				return Tag(n.node, "int")
+##				tempArgs = []
+##				for i in n.node.args:
+##					b = genSym()
+##					tempArgs.append(boxingPass(i))
+##				n.node.args = tempArgs
+##				return n.node
+#
+#			else:
+#				if n.node.name == "input":
+#					return Tag(n, "int")
+#				tempArgs = []
+#				for i in n.args:
+#					b = genSym()
+#					tempArgs.append(boxingPass(i))
+#				n.node.args = tempArgs
+#				return n
 
 		else:
 			if n.node.name == "input":
@@ -1210,6 +1223,13 @@ def flattenExp(n, x):
 		return x
 	
 	elif isinstance(n, CallFunc):
+		
+		if isinstance(n.node, CallFunc):
+			a = genSym()
+			n.node = Name(flattenExp(n.node,a))
+			
+		
+		
 		lst = []
 		for i in range(0, len(n.args)):
 			a = genSym()
@@ -1388,7 +1408,7 @@ def astToLLVM(ast, x):
 		tempstring = functionTypes[ast.fun.name]+"* @"+ast.fun.name
 		bitcast = "i8* bitcast ("+ tempstring+" to i8*)"
 		
-		closure = CallFunc(Name("make_closure"), [Name(bitcast), Name("i32 "+str(len(ast.env.map)))])
+		closure = CallFunc(Name("make_closure"), [Name(bitcast), Name("i32 "+str(len(ast.env.map)))], "")
 		
 		b = genSym()
 
@@ -1411,7 +1431,7 @@ def astToLLVM(ast, x):
 			#print "store i32 "+e+", i32* "+var+", align 8"
 			
 			tempVarStringParam = "i8* getelementptr inbounds (["+str(len(key)-1)+" x i8]* @.str_"+ast.env.name+"_"+key[2:]+", i32 0, i32 0)"
-			m = CallFunc(Name("insertFreeVar"), [Name("i32 "+b), Name(tempVarStringParam), Name("i32* "+var)])
+			m = CallFunc(Name("insertFreeVar"), [Name("i32 "+b), Name(tempVarStringParam), Name("i32* "+var)], "")
 			c = genSym()
 			codegen_callfunc(m, c)
 		
@@ -1421,7 +1441,7 @@ def astToLLVM(ast, x):
 		d = genSym()
 		tempMapParam = "%struct.Hashtable* "+genSymFromVar(ast.env)
 		tempVarStringParam = "i8* getelementptr inbounds (["+str(len(ast.name)+1)+" x i8]* @.str_"+ast.env+"_"+ast.name+", i32 0, i32 0)"
-		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ] )
+		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ], "" )
 		codegen_callfunc(e,x)
 		
 	
@@ -2000,7 +2020,13 @@ def codegen_callfunc(ast,x):
 	
 	tempargs = ""
 	definedFuncArgs = ""
+	functype = "i32 (%struct.Hashtable*"
+	
+	
 	tempName = "func_"+ast.node.name
+	closvarname = "func_"+ast.node.name
+	
+	
 #	if tempName in functionToClosure.keys():
 #		definedFuncArgs = "%struct.Hashtable* "+functionToClosure[tempName]+"->env"
 	
@@ -2008,10 +2034,14 @@ def codegen_callfunc(ast,x):
 		a = genSym()
 		tempargs += astToLLVM(ast.args[0],a)
 		definedFuncArgs += ","+astToLLVM(ast.args[0],a)
+		functype += ", i32*"
 		for i in range(1, len(ast.args)):
 			b = genSym()
 			tempargs+= ","+astToLLVM(ast.args[i],b)
 			definedFuncArgs+= ","+astToLLVM(ast.args[i],b)
+			functype += ", i32*"
+	
+	functype += ")*"
 			
 	
 	
@@ -2027,22 +2057,42 @@ def codegen_callfunc(ast,x):
 
 	elif ast.node.name == "insertFreeVar":
 		output_call(x,"i32 (i32, i8*, i32*)*", ast.node.name, tempargs,"")
-	elif ast.node.name != "htGet":
-		#generate all the complicated weirdness you need to access the hashmap to pass as the 
-		
-		envMap = genSym()
-		output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+functionToClosure[tempName], "")
-		
-		
-		d = genSym()
-		output_call(d,"i32","func_"+ast.node.name," %struct.Hashtable* "+envMap+definedFuncArgs,"")
-		#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
-		output_store(d,x)
 
 	elif ast.node.name == "htGet":
 		q = genSym()
 		output_call(q, "i32 ",ast.node.name, tempargs, "" )
 		output_store(q,x)
+	
+	else:
+#		
+		if ast.flag == "callVar":
+			p = genSym()
+			print "    "+%n = alloca i32, align 4'
+			a= genSym()
+			print "   "+a+" = call i8* @get_func_ptr1(i32 "+ast.node.name+")"
+			b = genSym()
+			print "   "+b+" = bitcast i8* "+a+" to "+functype
+			envMap = genSym()
+			output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+ast.node.name, "")
+			c = genSym()
+			output_call(c,"i32",b," %struct.Hashtable* "+envMap+definedFuncArgs,"")
+			output_store(c,x)
+		
+		else:
+			
+		
+			#generate all the complicated weirdness you need to access the hashmap to pass as the 
+			
+			envMap = genSym()
+			output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+functionToClosure[tempName], "")
+			
+			
+			d = genSym()
+			output_call(d,"i32","func_"+ast.node.name," %struct.Hashtable* "+envMap+definedFuncArgs,"")
+			#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
+			output_store(d,x)
+
+
 
 #the ast we have here is a Callfunc with an EnvRef instead of a name. 
 def codegen_freeVar_callfunc(ast,x):

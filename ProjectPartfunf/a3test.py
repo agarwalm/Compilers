@@ -498,7 +498,7 @@ def p_simple_statement(p):
 
 def p_input_exp(p):
 	'expression : input oparen parameters cparen'
-	p[0] = node.CallFunc(node.Name(p[1]),p[3])
+	p[0] = node.CallFunc(node.Name(p[1]),p[3], "")
 
 def p_single_param(p):
 	'parameters : expression'
@@ -541,7 +541,7 @@ def p_simpst(p):
 
 def p_callingTheFunc(p):
 	'expression : expression oparen parameters cparen'
-	p[0] = node.CallFunc(p[1], p[3])
+	p[0] = node.CallFunc(p[1], p[3], "")
 
 def p_lambdaThings(p):
 	'expression : lambda id_list colon expression'
