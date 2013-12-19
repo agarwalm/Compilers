@@ -2067,15 +2067,16 @@ def codegen_callfunc(ast,x):
 #		
 		if ast.flag == "callVar":
 			p = genSym()
-			print "    "+%n = alloca i32, align 4'
+			print "   "+p+" = load i32* "+ast.node.name+", align 8"
 			a= genSym()
-			print "   "+a+" = call i8* @get_func_ptr1(i32 "+ast.node.name+")"
+			print "   "+a+" = call i8* @get_func_ptr1(i32 "+p+")"
+			
 			b = genSym()
 			print "   "+b+" = bitcast i8* "+a+" to "+functype
 			envMap = genSym()
-			output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+ast.node.name, "")
+			output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+p, "")
 			c = genSym()
-			output_call(c,"i32",b," %struct.Hashtable* "+envMap+definedFuncArgs,"")
+			print "	 "+c+" = call i32 "+b+"( %struct.Hashtable* "+envMap+definedFuncArgs+") "
 			output_store(c,x)
 		
 		else:
