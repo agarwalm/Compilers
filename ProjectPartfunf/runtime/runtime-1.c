@@ -8,6 +8,7 @@ int initialized = 0;
 
 int input ()
 {
+	
 	int n;
 	scanf("%d", &n);
 	return n;
@@ -35,6 +36,8 @@ int print_int_nl(int x){
 	return 0;
 }
 
+
+
 int tag_int(int i){
 	
 	return i<<2;
@@ -51,6 +54,20 @@ int tag_bool(int b){
 int untag (int t){
 	
 	return t>>2;
+}
+
+int not (int t){
+	//printf("not value is: %d\n",t);
+	int untagged = t>>2;
+	if(untagged != 0){
+		//printf("i am not equal to zero!");
+		return (0<<2)^1;
+	}
+	else{
+		//printf("i am equal to 0");
+		return  (1<<2)^1;
+	}
+	
 }
 
 

@@ -792,7 +792,7 @@ def p_name(t):
 
 def p_none(t):
 	'noval : none'
-	t[0] = node.Noneyo(None)
+	t[0] = node.NoneNode(None)
 	
 
 def p_boolean(t):
