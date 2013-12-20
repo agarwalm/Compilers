@@ -455,6 +455,14 @@ def p_module(p):
 	'module : stmt'
 	p[0] = node.Module(p[1])
 
+def p_module_newl(p):
+	'module : newline module'
+	p[0] = node.Module(p[2])
+
+def p_module_empty(p):
+	'module :  '
+	p[0] = node.EOF(None)
+
 
 def p_stmt(p):
 	'stmt : statement_list'
@@ -488,9 +496,9 @@ def p_simple_statement(p):
 #	'statement : print name'
 #	p[0] = node.Printnl([p[2]])
 
-#def p_input_exp(p):
-#	'expression : input oparen parameters cparen'
-#	p[0] = node.CallFunc(node.Name(p[1]),p[3])
+def p_input_exp(p):
+	'expression : input oparen parameters cparen'
+	p[0] = node.CallFunc(node.Name(p[1]),p[3], "")
 
 def p_single_param(p):
 	'parameters : expression'
@@ -533,7 +541,7 @@ def p_simpst(p):
 
 def p_callingTheFunc(p):
 	'expression : expression oparen parameters cparen'
-	p[0] = node.CallFunc(p[1], p[3])
+	p[0] = node.CallFunc(p[1], p[3], "")
 
 def p_lambdaThings(p):
 	'expression : lambda id_list colon expression'
@@ -548,7 +556,11 @@ def p_lambdaThings(p):
 #                  p[0] = [p[1]+p[3]]
                   
 
-#how do you tell it epsilon?? Just a blank space?
+
+
+def p_returnStmtEmpty(p):
+	'simple_statement : return'
+	p[0] = node.Return(node.NoneNode(None))
 
 def p_returnStmt(p):
 	'simple_statement : return expression'
@@ -766,7 +778,7 @@ def p_exp_none(t):
 
 def p_const_rule(t):
 	'num : integer'
-	t[0] = node.Const(t[1])
+	t[0] = node.Const(t[1],None)
 
 
 
@@ -780,7 +792,7 @@ def p_name(t):
 
 def p_none(t):
 	'noval : none'
-	t[0] = node.Noneyo(None)
+	t[0] = node.NoneNode(None)
 	
 
 def p_boolean(t):
@@ -791,6 +803,8 @@ def p_boolean(t):
 		t[0] = node.Bool(1, None)
 	elif t[1] == "False":
 		t[0] = node.Bool(0, None)
+
+
 
 def p_error(t):
 	sys.exit('Illegal P0 operation')

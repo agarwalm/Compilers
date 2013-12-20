@@ -75,21 +75,23 @@ class Bitxor:
 		return "Bitxor(%s, %s)" % (self.left,self.right)
 
 class CallFunc:
-	def __init__(self,node,args):
+	def __init__(self,node,args,flag):
 		self.node=node
 		self.args=args
+		self.flag = flag
 	def __repr__(self):
-		return "CallFunc(%s,%s)"%(self.node,self.args)
+		return "CallFunc(%s,%s,%s)"%(self.node,self.args,self.flag)
 	def __str__(self):
-		return "CallFunc(%s,%s)" % (self.node,self.args)
+		return "CallFunc(%s,%s,%s)" % (self.node,self.args,self.flag)
 
 class Const:
-	def __init__(self,value):
+	def __init__(self,value,flag):
 		self.value=value
+		self.flag = flag
 	def __repr__(self):
-		return "Const(%s)" % (self.value)
+		return "Const(%s, %s)" % (self.value, self.flag)
 	def __str__(self):
-		return "Const(%s)" % (self.value)
+		return "Const(%s, %s)" % (self.value, self.flag)
 
 class NoneNode:
 	def __init__(self, value):
@@ -243,7 +245,7 @@ class UnaryAdd:
 	def __init__(self,expr):
 		self.expr=expr
 	def __repr__(self):
-		return "UnaryAdd()"
+		return "UnaryAdd(%s)" % (self.expr)
 	def __str__(self):
 		return "UnaryAdd(%s)" % (self.expr)
 
@@ -469,6 +471,18 @@ class Apply():
 		return "Apply(%s, %s)" % (self.fun, self.args)
 	def __str__(self):
 		return "Apply(%s, %s)" % (self.fun, self.args)
+
+class EOF():
+	def __init__(self,val):
+		self.val = val
+
+	def __repr__(self):
+		return "EOF()" 
+	def __str__(self):
+		return "EOF()"
+
+
+
 	
 		
 

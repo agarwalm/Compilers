@@ -23,10 +23,13 @@ envVarName = 0
 flatStmts = []
 variables = []
 envRefs = []
+functionCalls = []
+varsAsIfChecks = []
 
 lambdaAssigns = {}
 functionTypes = {}
 functionToClosure = {}
+envToVars = {}
 
 nested_if = False
 or_if = False
@@ -110,10 +113,21 @@ def compile():
 	
 	
 	print 'declare i32 @print_int_nl(i32 %x) nounwind uwtable ssp '
+	
 	print 'declare i32 @htGet(%struct.Hashtable*, i8*)'
-	print 'declare %struct.function* @make_closure(i8*, i32)'
-	print 'declare i32 @insertFreeVar(%struct.function*, i8*, i32*)'
-	print 'declare %struct.Hashtable* @get_free_vars(%struct.function*)'
+	print 'declare i32 @make_closure(i8*, i32)'
+	print 'declare i32 @insertFreeVar(i32, i8*, i32*)'
+	print 'declare %struct.Hashtable* @get_free_vars(i32)'
+	print 'declare i8* @get_func_ptr1(i32)'
+	print 'declare i32 @bitwise_and(i32,i32)'
+	print 'declare i32 @bitwise_or(i32,i32)'
+	print 'declare i32 @bitwise_xor(i32,i32)'
+	print 'declare i32 @logical_and(i32,i32)'
+	print 'declare i32 @logical_or(i32,i32)'
+	print 'declare i32 @tag_int(i32)'
+	print 'declare i32 @tag_bool(i32)'
+	print 'declare i32 @untag(i32)'
+	print 'declare i32 @not(i32)'
 
 	
 	
@@ -196,6 +210,10 @@ def free_vars(n):
 		return free_vars(n.left) | free_vars(n.right)
 	
 	elif isinstance(n, CallFunc):
+		if isinstance(n.node, CallFunc):
+			functionCalls.append(n.node.node.name)
+		else:
+			functionCalls.append(n.node.name)
 		fv_args = [free_vars(e) for e in n.args]
 		free_in_args = reduce(lambda a, b: a | b, fv_args, set([]))
 		return free_vars(n.node) | free_in_args
@@ -209,6 +227,7 @@ def free_vars(n):
 		tempbound = []
 		for frag in n.code:
 			a = free_vars(frag)
+			print "\n ;FREE VARS FOR func ",n,"are: ", a
 			b = bounded_vars(frag)
 
 			if a!= None:
@@ -218,6 +237,10 @@ def free_vars(n):
 				tempbound += b
 		for v in n.argnames:
 			variables.append(v)
+		
+		print "\n ;boundedVars: ", (set(tempbound) | set(n.argnames))
+		print "\n ;freevars: ", set(templist)
+		print "\n ;total freevars: ", set(templist) - (set(tempbound) | set(n.argnames))
 		return set(templist) - (set(tempbound) | set(n.argnames))
 	
 	elif isinstance(n, ConvertedLambda):
@@ -289,27 +312,22 @@ def closureConversion(n):
 		return d
 
 	elif isinstance(n,Return):
-		d = Return(closureConversion(n.expr))
+		d = Return(closureConversion(n.value))
 		return d
 	
 	elif isinstance(n, Lambda):
 		a = free_vars(n)
 		env = makeEnvVar()
+		envToVars[env] = a
 		make_env = {}
 		for vars in a:
 			key = genSymFromVar(vars)
 			#value = vars
 			value = Name(vars)
 			make_env[key] = value
+			
 		
-		#freeVars = free_vars(n.code)
-		#
-		#
-		#for vars in freeVars:
-		#	vars = EnvRef(env, vars.name)
-		#sub = [(vars.name, EnvRef(env, vars.name))]
-		
-		#TODO n.code is something else..need to use sub
+
 		tempBody = []
 
 		for c in n.code:
@@ -351,9 +369,37 @@ def newBodyPass(env, a, n):
 		d = Assign(n.name, newBodyPass(env, a, n.expr))
 		return d
 
+	elif isinstance(n, Printnl):
+		tempnodes = []
+		for node in n.nodes:
+			tempnodes.append(newBodyPass(env, a, node))
+		n.nodes = tempnodes
+		return n
+	
+
 	elif isinstance(n, Lambda):
 		n =  closureConversion(n)
 		return n
+
+	elif isinstance(n, CallFunc):
+		if isinstance(n.node, CallFunc):
+			if n.node.node.name == "input":
+				return n.node
+			else:
+				if n.node.node.name in a:
+					n.node.node = EnvRef(env, n.node.node.name)
+					global envRefs
+					envRefs.append(n.node.node)
+				return n
+		else:
+
+			if n.node.name == "input":
+				return n
+			if n.node.name in a:
+				n.node = EnvRef(env, n.node.name)
+				global envRefs
+				envRefs.append(n.node)
+			return n
 	
 	
 	elif isinstance(n, Name):
@@ -367,6 +413,7 @@ def newBodyPass(env, a, n):
 	else:
 		return n
 
+freeLambdAssign = None
 
 def lambdaLifting(n):
 	
@@ -381,8 +428,20 @@ def lambdaLifting(n):
 		return Stmt(tempNodes)
 
 	elif isinstance(n, Discard):
-		n.expr = lambdaLifting(n.expr)
-		return n
+		if isinstance(n.expr, MakeClosure):
+			return lambdaLifting(n.expr)
+		else:
+			n.expr = lambdaLifting(n.expr)
+			return n
+
+	elif isinstance(n, Return):
+		if isinstance(n.value, MakeClosure):
+
+			return Return(lambdaLifting(n.value))
+
+		else:
+			return n
+			
 		
 
 	elif isinstance(n, Assign):
@@ -400,14 +459,18 @@ def lambdaLifting(n):
 			return n
 
 	elif isinstance(n, MakeClosure):
+		
 		a = genSym()
+		global freeLambdAssign
+		freeLambdAssign = a
+		ident = a
 		tempCode = []
 		for i in n.fun.code:
 			tempCode.append(lambdaLifting(i))
 		n.fun.code = tempCode
-		lambdaAssigns[a] = n.fun
-		n.fun = Name(a)
-		return n
+		lambdaAssigns["func_"+a[2:]] = n.fun
+		n.fun = Name("func_"+a[2:])
+		return Assign(AssName(a), n)
 	
 	else:
 		return n
@@ -427,47 +490,7 @@ def lambdaLifting(n):
 	
 
 
-#def lambdaLifting(n):
-#	if isinstance(n, Module):
-#	lambdaLifting(n.nodes)
-#	return n
-#		
-#		
-#	elif isinstance(n,Stmt):
-#		for x in n.nodes:
-#			lambdaLifting(x)
-#		return n
-#	
-#	elif isinstance(n, Discard):
-#		return lambdaLifting(n.expr)
-#	
-#	elif isinstance(n, Assign):
-#		return lambdaLifting(n.expr)
-#	
-#	elif isinstance(n, Lambda):
-#		a = free_vars(n)
-#		env = makeEnvVar()
-#		make_env = {}
-#		for vars in a:
-#			key = genSymFromVar(vars)
-#			#value = vars
-#			value = Name(vars)
-#			make_env[key] = value
-#		
-#		#freeVars = free_vars(n.code)
-#		#
-#		#
-#		#for vars in freeVars:
-#		#	vars = EnvRef(env, vars.name)
-#		#sub = [(vars.name, EnvRef(env, vars.name))]
-#		
-#		#TODO n.code is something else..need to use sub
-#		for c in n.code:
-#			newBodyPass(env, a, c)
-#		b = ConvertedLambda(env, n.argnames, n.code)
-#		return MakeClosure(b, MakeEnv(make_env))
-#	else:
-#		print "cannot apply closure conversion algorithm"
+
 	
 
 
@@ -519,23 +542,53 @@ def boxingPass(n):
 		return n
 			
 	elif isinstance(n, NoneNode):
-		return n
+		return boxingPass(Const(0,"none"))
 
 	elif isinstance(n, CallFunc):
-		tempArgs = []
-		for i in n.args:
-			b = genSym()
-			tempArgs.append(boxingPass(i))
-		n.args = tempArgs
-		return n
+		if isinstance(n.node, CallFunc):
+			n.node = boxingPass(n.node)
+			n.flag = "callVar"
+			return n
+		#			if n.node.node.name == "input":
+#				return Tag(n.node, "int")
+##				tempArgs = []
+##				for i in n.node.args:
+##					b = genSym()
+##					tempArgs.append(boxingPass(i))
+##				n.node.args = tempArgs
+##				return n.node
+#
+#			else:
+#				if n.node.name == "input":
+#					return Tag(n, "int")
+#				tempArgs = []
+#				for i in n.args:
+#					b = genSym()
+#					tempArgs.append(boxingPass(i))
+#				n.node.args = tempArgs
+#				return n
+
+		else:
+			print ";GOT IN HERE YO!!!! and the callfunc is ", n
+			if n.node.name == "input":
+				return Tag(n, "int")
+			tempArgs = []
+			for i in n.args:
+				b = genSym()
+				tempArgs.append(boxingPass(i))
+			print ";tempArgs: ",tempArgs
+			n.args = tempArgs
+			print ";n is now: ", n
+			return n
 
 	elif isinstance(n, EnvRef):
 		return n
 	
 	elif isinstance(n, Not):
-		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
-		tagged.flag = "bool"
-		return tagged
+#		tagged = Tag( Bitxor( ConvertToInt ( boxingPass( BoolExp(n.expr, "!=", Const(0, "int"), "") ) ), ConvertToInt( Tag( Bool(1,""), "bool") )), "bool" )
+#		tagged.flag = "bool"
+		n.expr = boxingPass(n.expr)
+		return n
 
 	elif isinstance(n, Return):
 		n.value = boxingPass(n.value)
@@ -561,27 +614,34 @@ def boxingPass(n):
 			return box
 		
 		else:
-			#a boolean expression should untag each side of the boolean operator and then
-			#tag the result
+
 			tempL = boxingPass(n.left)
 			tempR = boxingPass(n.right)
-			#untag all by shifting left 2 (booleans treated as integers in this case)
+
 			n.left = ConvertToInt(tempL)
 			n.right = ConvertToInt(tempR)
-			#to Tag, create a Tag object with bool flag because we tag ints differently than
-			#booleans. The actual tagging occurs at runtime
-			#the result will always be a boolean
+
 			box = Tag(n, "bool")
 			return box
 	
 	elif isinstance(n, AugAssign):
+
 		expression = boxingPass(n.exp)
 		n.exp = expression
 		return n
 	
-	elif isinstance(n, UnarySub) or isinstance(n,UnaryAdd):
-		expression = boxingPass(n.expr)
-		n.expr = expression
+	elif isinstance(n, UnarySub):
+		tempExpr = boxingPass(Sub(Const(0, ""), n.expr))
+							  #expression = boxingPass(n.expr)
+#		tempExp = Tag(expression.node, "int")
+		n = tempExpr
+		return n
+
+	elif isinstance(n, UnaryAdd):
+		tempExpr = boxingPass(Add(Const(0, ""), n.expr))
+							  #expression = boxingPass(n.expr)
+						#		tempExp = Tag(expression.node, "int")
+		n = tempExpr
 		return n
 	
 	elif isinstance(n, Invert):
@@ -600,6 +660,7 @@ def boxingPass(n):
 		if not isinstance(n.name, AssName): #or len(n.nodes)>1:
 			sys.exit('Tuple assignment not permitted')
 		else:
+			variables.append(genSymFromVar(n.name.name))
 			n.expr = boxingPass(n.expr)
 			return n
 	
@@ -618,20 +679,33 @@ def boxingPass(n):
 	elif isinstance(n, Bitor) or isinstance(n, Bitand) or isinstance(n, Bitxor):
 		tempL = boxingPass(n.left)
 		tempR = boxingPass(n.right)
-		if isinstance(n.left,Bool):
-			n.left=ConvertToBool(tempL)
-		else:
-			n.left=ConvertToInt(tempL)
-		if isinstance(n.right,Bool):
-			n.right=ConvertToInt(tempR)
-		else:
-			n.right=ConvertToInt(tempR)
-		
-		box=Tag(n,"int")
-		return box
+#		if isinstance(n.left,Bool):
+#			n.left=ConvertToBool(tempL)
+#		else:
+#			n.left=ConvertToInt(tempL)
+#		if isinstance(n.right,Bool):
+#			n.right=ConvertToInt(tempR)
+#		else:
+#			n.right=ConvertToInt(tempR)
+#		
+#		box=Tag(n,"int")
+#		return box
+
+		n.left = tempL
+		n.right = tempR
+		return n
 	
 	elif isinstance(n, IfNode):
-		n.expr = boxingPass(n.expr)
+		if isinstance(n.expr, Name):
+			varsAsIfChecks.append(genSymFromVar(n.expr.name))
+		if isinstance(n.expr, Const):
+			val = None;
+			if n.expr.value != 0:
+				val = 1;
+			else:
+				val = 0;
+#n.expr.flag = "check"
+			n.expr = boxingPass(Bool(val,"check"))
 		for i in range(0,len(n.nodes)):
 			n.nodes[i] = boxingPass(n.nodes[i])
 		if isinstance(n.alt, IfNode):
@@ -689,13 +763,16 @@ def flattenStmt(n):
 			temp = Assign(AssName(x),Name(flattenExp(n.expr,genSym())))
 			variables.append(x)
 			flatStmts.append(temp)
+			
 	
 		elif isinstance(n.expr, Tag) and isinstance(n.expr.node, MakeClosure):
 				flatStmts.append(n)
+				
 		
 		else:
 			variables.append(genSymFromVar(n.name.name))
 			flattenExp(n.expr, genSymFromVar(n.name.name))
+		return genSymFromVar(n.name.name)
 	
 	#if you have a discard, then generate a variable to assign
 	#to the expression
@@ -721,14 +798,23 @@ def flattenStmt(n):
 		return b
 	
 	elif isinstance(n, Return):
-		a = genSym()
-		variables.append(a)
-		b = genSym()
-		variables.append(b)
-		n.value = Name(flattenExp(n.value, a))
-		temp = Assign(AssName(b), n)
-		flatStmts.append(temp)
-		return b
+		
+		if isinstance(n.value, Assign):
+			n.value = Name(flattenStmt(n.value))
+			flatStmts.append(n)
+			c = genSym()
+			return c
+		
+		else:
+		
+			a = genSym()
+			variables.append(a)
+			b = genSym()
+			variables.append(b)
+			n.value = Name(flattenExp(n.value, a))
+			temp = Assign(AssName(b), n)
+			flatStmts.append(temp)
+			return b
 	
 	
 	elif isinstance(n, AugAssign):
@@ -774,7 +860,7 @@ def flattenStmt(n):
 		
 		elif(n.op == "&="):
 			
-			flattenExp(Bitand(LeftShift(Name(x), Name(flattened_expr))), x)
+			flattenExp(boxingPass(Bitand(LeftShift(Name(x), Name(flattened_expr)))), x)
 		
 		elif(n.op == "|="):
 			
@@ -802,6 +888,9 @@ def flattenStmt(n):
 	elif isinstance(n, IfNode):
 		#we will modify the IfNode to form first line of the example in the notes:
 		#If not cond goto F:
+
+						
+		
 		n.expr = flattenExp(n.expr, genSym())
 		f = genLabel("F")
 		t = genLabel("T")
@@ -945,6 +1034,12 @@ def flattenExp(n, x):
 		flatStmts.append(temp)
 		return x
 
+	elif isinstance(n, MakeClosure):
+		a = genSym()
+		ass = Assign(AssName(genSymFromVar(x)),n)
+		flatStmts.append(ass)
+		return x
+
 
 		
 	
@@ -993,101 +1088,109 @@ def flattenExp(n, x):
 	elif isinstance(n,BoolExp):
 		variables.append(genSymFromVar(x))
 		
-		if (n.op != 'and') and (n.op != 'or'):
-			#generate symbols a and b
-			a = genSym()
-			b = genSym()
-			#use them to assign to constants (or if Names are the operands, will just return variable)
-			leftStmt = flattenExp(n.left, a )
-			rightStmt = flattenExp(n.right, b)
-			#now we use the same operator object n and just change its left and right values
-			n.left = Name(leftStmt)
-			n.right = Name(rightStmt)
-			#assign the add operation n to the varialbe x and append to the statements list
-			temp = Assign(AssName(x),n)
-			flatStmts.append(temp)
-			return x
+		#if (n.op != 'and') and (n.op != 'or'):
 		
-		elif n.op == 'and':
-			d = genSym()
-			e = genSym()
-			tempright = n.right
-			#print "i am tempright", tempright
-			templeft = n.left
-			n.right = ConvertToInt(Tag(Const(0), "int"))
-			n.left = ConvertToInt(n.left)
-			n.op = "!="
-			n.flag = "check"
-			var = genSymFromVar(x)
-			variables.append(var)
-			a = genSym()
-			b = genSym()
-			print "; tr:",tempright
-			flattenExp(tempright, a)
-			print "; left:",templeft
-			flattenExp(templeft, b)
-			print "; got here!"
-			r = Assign(AssName(var), Name(a))
-			variables.append(a)
-			
-			l = Assign(AssName(var), Name(b))
-			variables.append(b)
-			
-			g = genSym()
-			print "; blah"
-			print "; ", flatStmts
-			print "; ifnode: ", IfNode(Tag(n, "bool"), [r], [l], "and" )
-			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l], "and" ))
-			print "; rawr"
-			#flatStmts.append(andIf)
-			
-			return x
+		#generate symbols a and b
+		a = genSym()
+		b = genSym()
+		#use them to assign to constants (or if Names are the operands, will just return variable)
+		leftStmt = flattenExp(n.left, a )
+		rightStmt = flattenExp(n.right, b)
+		#now we use the same operator object n and just change its left and right values
+		n.left = Name(leftStmt)
+		n.right = Name(rightStmt)
+		#assign the add operation n to the varialbe x and append to the statements list
+		temp = Assign(AssName(x),n)
+		flatStmts.append(temp)
+		return x
 		
-		
-		
-		elif n.op == 'or':
-			#
-			#			t = n.left.node.node
-			#			r = n.right.node.node
-			#global if_or
-			#if_or = True;
-			
-			
-			tempright = n.right
-			templeft = n.left
-			n.right = ConvertToInt(Tag(Const(0), "int"))
-			n.left = ConvertToInt(n.left)
-			n.op = "!="
-			n.flag = "check"
-			var = genSymFromVar(x)
-			variables.append(var)
-			
-			a = genSym()
-			b = genSym()
-			
-			print "; tr:",tempright
-			flattenExp(tempright, a)
-			print "; left:",templeft
-			flattenExp(templeft, b)
-			print "; got here!"
-			
-			r = Assign(AssName(var), Name(a))
-			
-			l = Assign(AssName(var), Name(b))
-			
-			orIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r], "or" ))
-			
-			e = specialEnd()
-			flatStmts.append(GoTo(e))
-			#end label for the end of the if statement (where you jump to if the condition is true)
-			endLabel = Label(e)
-			flatStmts.append(endLabel)
-			global endCount
-			endCount = 0;
-			
-			
-			return x
-	
+#		elif n.op == 'and':
+#			d = genSym()
+#			e = genSym()
+#			tempright = n.right
+#			#print "i am tempright", tempright
+#			templeft = n.left
+#			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
+#			n.left = ConvertToInt(n.left)
+#			n.op = "!="
+#			n.flag = "check"
+#			var = genSymFromVar(x)
+#			variables.append(var)
+#			a = genSym()
+#			b = genSym()
+#			if isinstance(tempright, Name):
+#				a= genSymFromVar(tempright.name)
+#			
+#			if isinstance(templeft, Name):
+#				b= genSymFromVar(templeft.name)
+#				
+#			print "; tr:",tempright
+#			flattenExp(tempright, a)
+#			print "; left:",templeft
+#			flattenExp(templeft, b)
+#			print "; got here!"
+#	
+#			r = Assign(AssName(var), Name(a))
+#			variables.append(a)
+#			
+#			l = Assign(AssName(var), Name(b))
+#			variables.append(b)
+#			
+#			g = genSym()
+#			print "; blah"
+#			print "; ", flatStmts
+#			print "; ifnode: ", IfNode(Tag(n, "bool"), [r], [l], "and" )
+#			andIf = flattenStmt(IfNode(Tag(n, "bool"), [r], [l], "and" ))
+#			print "; rawr"
+#			#flatStmts.append(andIf)
+#			
+#			return x
+#		
+#		
+#		
+#		elif n.op == 'or':
+#			#
+#			#			t = n.left.node.node
+#			#			r = n.right.node.node
+#			#global if_or
+#			#if_or = True;
+#			
+#			
+#			tempright = n.right
+#			templeft = n.left
+#			n.right = ConvertToInt(Tag(Const(0, "int"), "int"))
+#			n.left = ConvertToInt(n.left)
+#			n.op = "!="
+#			n.flag = "check"
+#			var = genSymFromVar(x)
+#			variables.append(var)
+#			
+#			a = genSym()
+#			b = genSym()
+#			
+#			print "; tr:",tempright
+#			flattenExp(tempright, a)
+#			print "; left:",templeft
+#			flattenExp(templeft, b)
+#			print "; got here!"
+#			
+#			r = Assign(AssName(var), Name(a))
+#			
+#			l = Assign(AssName(var), Name(b))
+#			
+#			orIf = flattenStmt(IfNode(Tag(n, "bool"), [l], [r], "or" ))
+#			
+#			e = specialEnd()
+#			flatStmts.append(GoTo(e))
+#			#end label for the end of the if statement (where you jump to if the condition is true)
+#			endLabel = Label(e)
+#			flatStmts.append(endLabel)
+#			global endCount
+#			endCount = 0;
+#			
+#			
+#			return x
+#	
 	
 	
 	
@@ -1146,11 +1249,18 @@ def flattenExp(n, x):
 		#		flatStmts.append(temp)
 		#		return x
 		
-		flattenExp(boxingPass(Add(t1,Const(1))),b)
-		flattenExp(boxingPass(Sub(Const(0),Name(b))),x)
+		flattenExp(boxingPass(Add(t1,Const(1, "int"))),b)
+		flattenExp(boxingPass(Sub(Const(0, "int"),Name(b))),x)
 		return x
 	
 	elif isinstance(n, CallFunc):
+		
+		if isinstance(n.node, CallFunc):
+			a = genSym()
+			n.node = Name(flattenExp(n.node,a))
+			
+		
+		
 		lst = []
 		for i in range(0, len(n.args)):
 			a = genSym()
@@ -1238,12 +1348,19 @@ def alloc(flatList):
 #this is so you can pass them as strings to htGet when you see EnvRefs
 def dec_global_string_vars():
 	print "\n;declaring strings for all of the free variables"
-	global envRefs
-	for er in envRefs:
-		n = er.name
-		tempString = "\n@.str_"+er.env+"_"+n+" = private unnamed_addr constant ["+str(len(n)+1)+" x i8] c\""+n+"\\00\", align 1\n"
-		print tempString
+#	global envRefs
+#	for er in envRefs:
+#		n = er.name
+#		tempString = "\n@.str_"+er.env+"_"+n+" = private unnamed_addr constant ["+str(len(n)+1)+" x i8] c\""+n+"\\00\", align 1\n"
+#		print tempString
 	
+	for key in envToVars.keys():
+		for freeVar in envToVars[key]:
+
+			tempString = "\n@.str_"+key+"_"+freeVar+" = private unnamed_addr constant ["+str(len(freeVar)+1)+" x i8] c\""+freeVar+"\\00\", align 1\n"
+			print tempString
+			
+		
 	
 		
 
@@ -1258,7 +1375,7 @@ def funcDefs():
 	for k in lambdaAssigns.keys():
 		typeStore = "(%struct.Hashtable*"
 		
-		tempParams = "(%struct.Hashtable* %env"
+		tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)
 		if len(lambdaAssigns[k].argnames) != 0:
 			tempParams = "(%struct.Hashtable* "+genSymFromVar(lambdaAssigns[k].env)+", i32* "+lambdaAssigns[k].argnames[0]
 			typeStore = "(%struct.Hashtable* , i32*"
@@ -1279,6 +1396,12 @@ def funcDefs():
 		print "\n; j is: ", j
 		print "define i32 @"+j+funcToTempparams[j]+" nounwind uwtable ssp {"
 		alloc(lambdaAssigns[j].code)
+		for freeVar in envToVars[lambdaAssigns[j].env]:
+			print "	 "+genSymFromVar(freeVar) + " = alloca i32, align 4"
+			a = genSym()
+			print "  "+a+" = call i32  @htGet(%struct.Hashtable* %."+lambdaAssigns[j].env+",i8* getelementptr inbounds (["+str(len(freeVar)+1)+" x i8]* @.str_"+lambdaAssigns[j].env+"_"+freeVar+", i32 0, i32 0))"
+			output_store(a,genSymFromVar(freeVar))
+			
 		for code in lambdaAssigns[j].code:
 			astToLLVM(code,genSym())
 		print "}"
@@ -1329,14 +1452,30 @@ def astToLLVM(ast, x):
 		tempstring = functionTypes[ast.fun.name]+"* @"+ast.fun.name
 		bitcast = "i8* bitcast ("+ tempstring+" to i8*)"
 		
-		closure = CallFunc(Name("make_closure"), [Name(bitcast), Name("i32 "+str(len(ast.env.map)))])
+		closure = CallFunc(Name("make_closure"), [Name(bitcast), Name("i32 "+str(len(ast.env.map)))], "")
+		
 		b = genSym()
+
 		codegen_callfunc(closure, b)
+		
+		print "   store i32 "+b+", i32* "+genSymFromVar(ast.fun.name[5:])+", align 8"
+		
 		functionToClosure[ast.fun.name]= b
 		
 		for key in ast.env.map:
+			
+			var = genSymFromVar(ast.env.map[key].name)
+			
+		
+			if (ast.env.map[key].name in functionCalls):
+				d = genSym()
+				e = genSym()
+				#print "   "+d+" = bitcast %struct.function* "+b+" to i32*"
+				#print "   "+e+" = load i32* "+d+", align 8"
+			#print "store i32 "+e+", i32* "+var+", align 8"
+			
 			tempVarStringParam = "i8* getelementptr inbounds (["+str(len(key)-1)+" x i8]* @.str_"+ast.env.name+"_"+key[2:]+", i32 0, i32 0)"
-			m = CallFunc(Name("insertFreeVar"), [Name("%struct.function* "+b), Name(tempVarStringParam), Name("i32* "+genSymFromVar(ast.env.map[key].name))])
+			m = CallFunc(Name("insertFreeVar"), [Name("i32 "+b), Name(tempVarStringParam), Name("i32* "+var)], "")
 			c = genSym()
 			codegen_callfunc(m, c)
 		
@@ -1346,7 +1485,7 @@ def astToLLVM(ast, x):
 		d = genSym()
 		tempMapParam = "%struct.Hashtable* "+genSymFromVar(ast.env)
 		tempVarStringParam = "i8* getelementptr inbounds (["+str(len(ast.name)+1)+" x i8]* @.str_"+ast.env+"_"+ast.name+", i32 0, i32 0)"
-		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ] )
+		e = CallFunc(Name("htGet"), [Name(tempMapParam), Name(tempVarStringParam) ], "" )
 		codegen_callfunc(e,x)
 		
 	
@@ -1450,7 +1589,15 @@ def astToLLVM(ast, x):
 		return codegen_return(ast, x)
 	
 	elif isinstance(ast, CallFunc):
+		if isinstance(ast.node, EnvRef):
+			return codegen_freeVar_callfunc(ast,x)
+		elif ast.node.name == "input":
+			return codegen_input(ast,x)
 		return codegen_callfunc(ast, x)
+
+	elif isinstance(ast, Not):
+		return codegen_not(ast,x)
+	
 	
 	else:
 		print "; ", ast
@@ -1464,7 +1611,35 @@ def astToLLVM(ast, x):
 
 def codegen_assign_const(ast,x):
 	print"\n ; storing ", ast.expr.value," in ",x,"\n"
-	output_store(str(ast.expr.value),x)
+	val = astToLLVM(ast.expr,x)
+	if ast.expr.flag == "check":
+			
+		print"\n ; boolean,  ", ast.expr," is a check in an IfNode \n"
+			
+		global current_ifcheck
+		a = genSym();
+		print "	 "+a + " = alloca i1, align 4"
+		output_istore(val,a)
+		b = genSym()
+		output_iload(b,a)
+		current_ifcheck = b
+
+			
+	else:
+			output_store(str(ast.expr.value),x)
+
+
+
+		
+
+
+
+
+
+
+
+
+
 
 def codegen_assign_bool(ast,x):
 	print"\n ; assigning boolean  ", ast.expr," to ",x,"\n"
@@ -1493,29 +1668,69 @@ def codegen_return(ast,x):
 	print "    ret i32 ",a
 
 
+def codegen_not(ast,x):
+	print "\n; calling not func on ",ast,"\n"
+
+	a = genSym()
+	b = genSym()
+	output_load(a,ast.expr)
+	output_call(b, "i32 ", "not","i32 "+a,"")
+	output_store(b, x)
+	
+
+
 def codegen_tag(ast,x):
 	
-	print"\n ; Tagging ",x,"\n"
+	print"\n ; Tagging ",ast.node,"\n"
 	
 	c = genSym()
 	#	print "	 "+c + " = alloca i32, align 4"
 	if isinstance(ast.node, Const):
 		output_store(str(ast.node.value),x)
-		#	output_store(c,x)
+		
+		if ast.node.flag == "check":
+			print"\n ; const,  ", ast.node," is a check in an IfNode \n"
+			val=None;
+			if ast.node.value != 0:
+				val = 1
+			else:
+				val = 0
+			
+#			astToLLVM(Bool(val, "check"),x)
+#			return
+			
+			p = genSym()
+			e = genSym()
+			print "	 "+p + " = alloca i32, align 4"
+			output_load(e,x)
+			output_store(e,p)
+			global current_ifcheck
+			current_ifcheck = p
+			print ";CURRENT IF CHECK: ",p
+
+		
+
 		a = genSym();
 		print "	 "+a + " = alloca i32, align 4"
 		output_store(str(2),a)
 		
 		astToLLVM(LeftShift(Name(x), Name(a)), x)
-		if ast.flag == "int":
+		if ast.flag == "bool":
 			return
-		elif ast.flag == "bool":
-			b = genSym()
-			print "	 "+b + " = alloca i32, align 4"
-			output_store(str(1),b)
-			astToLLVM(Bitor(Name(x), Name(b)), x)
+
+
+		if ast.node.flag == "check":
+			astToLLVM(ConvertToInt(Name(x)),x)
+			print ";GOT IN HERE!"
+			q = genSym()
+			k = genSym()
+			
+			output_load(q,current_ifcheck)
+			print "	 "+k+" = trunc i32 "+q+" to i1"
+			current_ifcheck = k
+			print " "
 	
-	if isinstance(ast.node, Bool):
+	elif isinstance(ast.node, Bool):
 		d = genSym()
 		output_store(str(ast.node.value),x)
 		
@@ -1531,18 +1746,39 @@ def codegen_tag(ast,x):
 		
 		#output_store(d,x)
 		#	output_store(c,x)
-		a = genSym();
-		print "	 "+a + " = alloca i32, align 4"
-		output_store(str(2),a)
-		
-		astToLLVM(LeftShift(Name(x), Name(a)), x)
+#		a = genSym();
+#		print "	 "+a + " = alloca i32, align 4"
+#		output_store(str(2),a)
+#		
+#		astToLLVM(LeftShift(Name(x), Name(a)), x)
 		if ast.flag == "int":
 			return
 		elif ast.flag == "bool":
-			b = genSym()
-			print "	 "+b + " = alloca i32, align 4"
-			output_store(str(1),b)
-			astToLLVM(Bitor(Name(x), Name(b)), x)
+#			b = genSym()
+#			print "	 "+b + " = alloca i32, align 4"
+#			output_store(str(1),b)
+#			
+#			#generate the bitor
+#			
+#			print "; bitor part of the tag"
+#			
+#			b1 = genSym()
+#			output_load(b1, x)
+#			b2 = genSym()
+#			output_load(b2,b)
+
+			c1 = genSym()
+			c2 = genSym()
+			output_load(c2,x)
+			output_call(c1, "i32 ", "tag_bool","i32 "+c2,"")
+			output_store(c1, x)
+
+			
+			
+			
+			
+			
+			#astToLLVM(Bitor(Name(x), Name(b)), x)
 		
 		
 		if ast.node.flag == "check":
@@ -1560,16 +1796,23 @@ def codegen_tag(ast,x):
 		#	output_store(c,x)
 		a = genSym();
 		print "	 "+a + " = alloca i32, align 4"
-		output_store(str(2),a)
-		
-		astToLLVM(LeftShift(Name(d), Name(a)), x)
+
 		if ast.flag == "int":
+			output_store(str(2),a)
+		
+			astToLLVM(LeftShift(Name(d), Name(a)), x)
 			return
 		elif ast.flag == "bool":
-			b = genSym()
-			print "	 "+b + " = alloca i32, align 4"
-			output_store(str(1),b)
-			astToLLVM(Bitor(Name(x), Name(b)), x)
+#			b = genSym()
+#			print "	 "+b + " = alloca i32, align 4"
+#			output_store(str(1),b)
+#			astToLLVM(Bitor(Name(x), Name(b)), x)
+
+			d1 = genSym()
+			d2 = genSym()
+			output_load(d2,ast.node.name)
+			output_call(d1, "i32 ", "tag_bool","i32 "+d2,"")
+			output_store(d1, x)
 
 def codegen_print(ast,x):
 	print"\n ; generating code to print,  ", x ," \n"
@@ -1604,6 +1847,9 @@ def codegen_assign_name(ast):
 def codegen_boolExp(ast,x, flag):
 	
 	print"\n ; generating code for boolean expression,  ", ast ," \n"
+
+		
+	
 	
 	a = genSym()
 	b = genSym()
@@ -1611,40 +1857,104 @@ def codegen_boolExp(ast,x, flag):
 	output_load(b, astToLLVM(ast.right,x))
 	c = genSym()
 	d = genSym()
-	if ast.op == "<":
-		print  "  "+c+" = icmp slt i32 "+a+", "+b
-	elif ast.op == ">":
-		print  "  "+c+" = icmp sgt i32 "+a+", "+b
-	elif ast.op == "==":
-		print "   "+c+" = icmp eq i32 "+a+", "+b
-	elif ast.op == "<=":
-		print "   "+c+" = icmp sle i32 "+a+", "+b
-	elif ast.op == ">=":
-		print "   "+c+" = icmp sge i32 "+a+", "+b
-	elif ast.op == "!=":
-		print "   "+c+" = icmp ne i32 "+a+", "+b
 	
-	if flag == "check":
-		global current_ifcheck
-		current_ifcheck = c
 	
+	if ast.op == "and":
+		output_call(c, "i32 ", "logical_and","i32 "+a+", i32 "+b,"")
+		output_store(c,x)
+		
+		
+		if flag == "check":
+			
+			q = genSym()
+			output_call(q, "i32 ", "untag","i32 "+c,"")
+			
+			k = genSym()
+			
+			global current_ifcheck
+			print "	 "+k+" = trunc i32 "+q+" to i1"
+			current_ifcheck = k
+			print " "
+
+	
+	elif ast.op == "or":
+		output_call(c, "i32 ", "logical_or","i32 "+a+", i32 "+b,"")
+		output_store(c,x)
+
+		if flag == "check":
+			k = genSym()
+			
+			
+			q = genSym()
+			output_call(q, "i32 ", "untag","i32 "+c,"")
+			
+			k = genSym()
+			
+			global current_ifcheck
+			print "	 "+k+" = trunc i32 "+q+" to i1"
+			current_ifcheck = k
+			print " "
 	
 	else:
+
+	
+		if ast.op == "<":
+			print  "  "+c+" = icmp slt i32 "+a+", "+b
+		elif ast.op == ">":
+			print  "  "+c+" = icmp sgt i32 "+a+", "+b
+		elif ast.op == "==":
+			print "   "+c+" = icmp eq i32 "+a+", "+b
+		elif ast.op == "<=":
+			print "   "+c+" = icmp sle i32 "+a+", "+b
+		elif ast.op == ">=":
+			print "   "+c+" = icmp sge i32 "+a+", "+b
+		elif ast.op == "!=":
+			print "   "+c+" = icmp ne i32 "+a+", "+b
+		
+		if flag == "check":
+			m = genSym()
+			
+			global current_ifcheck
+			current_ifcheck = c
+			
+			print "	 "+m+" = zext i1 "+c+" to i32"
+			print " "
+			output_store(m,x)
 		
 		
-		print "	 "+d+" = zext i1 "+c+" to i32"
-		print " "
-		output_store(d,x)
+		else:
+			
+			
+			print "	 "+d+" = zext i1 "+c+" to i32"
+			print " "
+			output_store(d,x)
 
 
 
 def codegen_if(ast,x):
-	
 	print"\n ; generating code for ,  ", ast ," \n"
+
+	if ast.expr in varsAsIfChecks:
+		a = genSym()
+		b = genSym()
+		print "	 "+a + " = alloca i32, align 4"
+		print "	 "+b + " = alloca i32, align 4"
+		output_store("2",a)
+		astToLLVM(RightShift(Name(ast.expr),Name(a)),b)
+		k = genSym()
+		d = genSym()
+		output_load(d, b)
+		print "	 "+k+" = trunc i32 "+d+" to i1"
+		print "   br i1 "+k+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
+		print " "
+		
+		
 	
-	global current_ifcheck
-	print "   br i1 "+current_ifcheck+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
-	print " "
+	else:
+	
+		global current_ifcheck
+		print "   br i1 "+current_ifcheck+", label "+"%"+ast.alt.label+", label "+"%"+ast.nodes.label
+		print " "
 
 
 def codegen_label(ast):
@@ -1663,7 +1973,22 @@ def codegen_binop(ast,x, op):
 	output_load(a, astToLLVM(ast.left,x))
 	output_load(b, astToLLVM(ast.right,x))
 	c = genSym()
-	output_operation(c,a,b,op)
+
+	if op == "and":
+
+		output_call(c, "i32 ", "bitwise_and","i32 "+a+", i32 "+b,"")
+	
+	elif op == "or":
+		output_call(c, "i32 ", "bitwise_or","i32 "+a+", i32 "+b,"")
+			
+	elif op == "xor":
+		output_call(c, "i32 ", "bitwise_xor","i32 "+a+", i32 "+b,"")
+			
+	
+	else:
+	
+		output_operation(c,a,b,op)
+	
 	#stores contents of c in x
 	output_store(c,x)
 
@@ -1779,9 +2104,93 @@ def codegen_callfunc(ast,x):
 	
 	tempargs = ""
 	definedFuncArgs = ""
+	functype = "i32 (%struct.Hashtable*"
+	
+	
 	tempName = "func_"+ast.node.name
+	closvarname = "func_"+ast.node.name
+	
+	
 #	if tempName in functionToClosure.keys():
 #		definedFuncArgs = "%struct.Hashtable* "+functionToClosure[tempName]+"->env"
+	
+	if len(ast.args)>0:
+		a = genSym()
+		tempargs += astToLLVM(ast.args[0],a)
+		definedFuncArgs += ","+astToLLVM(ast.args[0],a)
+		functype += ", i32*"
+		for i in range(1, len(ast.args)):
+			b = genSym()
+			tempargs+= ","+astToLLVM(ast.args[i],b)
+			definedFuncArgs+= ","+astToLLVM(ast.args[i],b)
+			functype += ", i32*"
+	
+	functype += ")*"
+			
+	
+	
+
+	
+	a = genSym()
+	if ast.node.name == "make_closure":
+		output_call(x,"i32 (i8*, i32)*",ast.node.name,tempargs,"")
+
+
+#	elif ast.node.name == "get_func_ptr1":
+#		
+
+	elif ast.node.name == "insertFreeVar":
+		output_call(x,"i32 (i32, i8*, i32*)*", ast.node.name, tempargs,"")
+
+	elif ast.node.name == "htGet":
+		q = genSym()
+		output_call(q, "i32 ",ast.node.name, tempargs, "" )
+		output_store(q,x)
+	
+	else:
+#		
+		if ast.flag == "callVar":
+			p = genSym()
+			print "   "+p+" = load i32* "+ast.node.name+", align 8"
+			a= genSym()
+			print "   "+a+" = call i8* @get_func_ptr1(i32 "+p+")"
+			
+			b = genSym()
+			print "   "+b+" = bitcast i8* "+a+" to "+functype
+			envMap = genSym()
+			output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+p, "")
+			c = genSym()
+			print "	 "+c+" = call i32 "+b+"( %struct.Hashtable* "+envMap+definedFuncArgs+") "
+			output_store(c,x)
+		
+		else:
+			
+		
+			#generate all the complicated weirdness you need to access the hashmap to pass as the 
+			if tempName not in functionToClosure.keys() functionToClosure:
+				sys.exit('ERROR! Undefined Function')
+				
+			envMap = genSym()
+			output_call(envMap, "%struct.Hashtable* (i32)*", "get_free_vars", "i32 "+functionToClosure[tempName], "")
+			
+			
+			d = genSym()
+			output_call(d,"i32","func_"+ast.node.name," %struct.Hashtable* "+envMap+definedFuncArgs,"")
+			#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
+			output_store(d,x)
+
+
+
+#the ast we have here is a Callfunc with an EnvRef instead of a name. 
+def codegen_freeVar_callfunc(ast,x):
+	
+	print"\n ; calling the function ,  ", ast ," \n"
+	
+	tempargs = ""
+	definedFuncArgs = ""
+	tempName = "func_"+ast.node.name
+	#	if tempName in functionToClosure.keys():
+	#		definedFuncArgs = "%struct.Hashtable* "+functionToClosure[tempName]+"->env"
 	
 	if len(ast.args)>0:
 		a = genSym()
@@ -1791,50 +2200,37 @@ def codegen_callfunc(ast,x):
 			b = genSym()
 			tempargs+= ","+astToLLVM(ast.args[i],b)
 			definedFuncArgs+= ","+astToLLVM(ast.args[i],b)
-			
 	
+	#will generate the code that gets the closure object out of the hashmap in int form
+	#and stores the result in x (which is an int)
+	astToLLVM(ast.node,x)
 	
+	b = genSym()
+	print "   "+b+" = load i32* "+x+", align 8"
 
-	
 	a = genSym()
-	if ast.node.name == "make_closure":
-		output_call(x,"%struct.function* (i8*, i32)*",ast.node.name,tempargs,"")
+	print "   "+a+" = call i8* @get_func_ptr1(i32 "+b+")"
+	c = genSym()
+	print "   "+c+" = bitcast i8* "+a+" to "+functionTypes[tempName]+"*"
 
-	elif ast.node.name == "insertFreeVar":
-		output_call(x,"i32 (%struct.function*, i8*, i32*)*", ast.node.name, tempargs,"")
-	elif ast.node.name != "htGet":
-		#generate all the complicated weirdness you need to access the hashmap to pass as the first param to a function
-#		c = genSym()
-#		print c+" = alloca %struct.function*, align 8"
-#		print "   store %struct.function* "+functionToClosure[tempName]+", %struct.function** "+c+", align 8"
-#		e = genSym()
-#		print "   "+e+" = load %struct.function** "+c+", align 8"
-#		f = genSym()
-#		print "   "+f+" = getelementptr inbounds %struct.function* "+e+", i32 0, i32 0"
-#		g = genSym()
-#		print "    "+g+" = load i8** "+f+", align 8"
-#		h = genSym()
-#		print "    "+h+" = bitcast i8* "+g+" to i32 (i32, %struct.Hashtable*)*"
-#		i = genSym()
-#		print "    "+i+" = load %struct.function** "+c+", align 8"
-#		j = genSym()
-#		print "    "+j+" = getelementptr inbounds %struct.function* "+i+", i32 0, i32 1"
-#		env = genSym()
-#		print "   "+env+" = load %struct.Hashtable** "+j+", align 8"
-		
-		envMap = genSym()
-		output_call(envMap, "%struct.Hashtable* (%struct.function*)*", "get_free_vars", "%struct.function* "+functionToClosure[tempName], "")
-		
-		
-		d = genSym()
-		output_call(d,"i32","func_"+ast.node.name," %struct.Hashtable* "+envMap+definedFuncArgs,"")
-		#if ast.node.name != "htGet" and ast.node.name != "make_closure" and ast.node.name != "htInsert":
-		output_store(d,x)
+	d = genSym()
+	print "   "+d+"  = call %struct.Hashtable* @get_free_vars(i32 "+b+")"
 
-	elif ast.node.name == "htGet":
-		q = genSym()
-		output_call(q, "i32 ",ast.node.name, tempargs, "" )
-		output_store(q,x)
+	e = genSym()
+	#print "   "+e+" =  call "+functionTypes[tempName]+"* "+c+"(%struct.Hashtable* "+d+" i32"
+	output_call_point(e,"i32",c," %struct.Hashtable* "+d+definedFuncArgs,"")
+	output_store(e,x);
+
+
+def codegen_input(ast,x):
+	a = genSym()
+	output_call(a,"i32","input","","")
+	output_store(a,x)
+	
+
+
+	
+	
 
 
 def output_load(tempvar, val):
@@ -1860,6 +2256,9 @@ def output_fptosi_double(a,b):
 
 def output_call(a,ret,func,param,nounwind):
 	print "	 "+a+" = call "+ret+" @"+func+"("+param+") "+nounwind
+
+def output_call_point(a,ret,func,param,nounwind):
+	print "	 "+a+" = call "+ret+" "+func+"("+param+") "+nounwind
 
 
 
