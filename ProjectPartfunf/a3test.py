@@ -556,7 +556,11 @@ def p_lambdaThings(p):
 #                  p[0] = [p[1]+p[3]]
                   
 
-#how do you tell it epsilon?? Just a blank space?
+
+
+def p_returnStmtEmpty(p):
+	'simple_statement : return'
+	p[0] = node.Return(node.NoneNode(None))
 
 def p_returnStmt(p):
 	'simple_statement : return expression'
